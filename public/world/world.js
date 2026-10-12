@@ -28,10 +28,10 @@ const world = {
   streetsDrawn:0,buildingCount:0,roadCount:0,showMap:true,worldSize:8600,cameraResetQueued:false,landmarks:[],districtCount:0
 };
 const colors={
- sand:'#797E69',grass:'#596C5E',road:'#35474A',trunk:'#35484C',minor:'#4C5955',
- curb:'#A7A99A',path:'#948D78',stripe:'#DFD0AF',concrete:'#D3C8AE',
- stone:'#D5B798',cream:'#E8CEAC',pink:'#C59074',mint:'#83A391',
- roof:'#876F5E',glass:'#49747E',steel:'#E5CEAD',gold:'#EDB675',wall:'#BDA57E'
+ sand:'#8A8670',grass:'#4A6050',road:'#2D3D3F',trunk:'#2F4042',minor:'#434F4B',
+ curb:'#9A9C8E',path:'#8A8370',stripe:'#DFD0AF',concrete:'#C8BEAA',
+ stone:'#C5A88C',cream:'#DEC5A5',pink:'#B8836C',mint:'#7A9B89',
+ roof:'#7A6552',glass:'#3B6168',steel:'#D5C0A0',gold:'#E5B060',wall:'#B09470'
 };
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const dist=(x,z,a,b)=>Math.hypot(x-a,z-b);
@@ -52,10 +52,13 @@ function showError(error){
 function mat(name,color,metal=0,rough=1){
  const key=name;
  if(world.mats[key])return world.mats[key];
- const m=new B.StandardMaterial(name,world.scene);
- m.diffuseColor=B.Color3.FromHexString(color);
- m.specularColor=new B.Color3(metal*.7,metal*.7,metal*.7);
- m.ambientColor=m.diffuseColor.scale(.14);
+ const m=new B.PBRMaterial(name,world.scene);
+ m.albedoColor=B.Color3.FromHexString(color);
+ m.metallic=Math.min(metal,.35);
+ m.roughness=Math.max(rough,.25);
+ m.environmentIntensity=.65;
+ m.directIntensity=1.1;
+ m.ambientColor=m.albedoColor.scale(.12);
  world.mats[key]=m;return m;
 }
 function meshBox(name,x,y,z,w,h,d,material,parent=null){
@@ -91,6 +94,7 @@ function lineMesh(name,segments,width,colorMaterial,height=.052){
  B.VertexData.ComputeNormals(positions,indices,normals);
  const vertex=new B.VertexData();vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;vertex.uvs=uvs;
  vertex.applyToMesh(mesh);mesh.material=colorMaterial;mesh.isPickable=false;mesh.freezeWorldMatrix();
+ mesh.receiveShadows=true;
  return mesh;
 }
 function segmentsForRoad(road){
@@ -190,13 +194,34 @@ function buildRoadNetwork(map){
    }
   }
  }
- lineMesh('OSM mapped local roads',residential,5.7,mat('road-residential',colors.minor),.11);
- lineMesh('OSM mapped primary roads',main,9.8,mat('road-primary',colors.road),.12);
- lineMesh('OSM mapped A3 highway',trunk,13.6,mat('road-trunk',colors.trunk),.13);
- lineMesh('OSM mapped pedestrian paths',path,2.5,mat('footpaths','#9B967E'),.13);
- lineMesh('street pavements',sidewalks,1.18,mat('pavements','#81847B'),.126);
- lineMesh('pavement edges',curbs,.16,mat('curbs','#999589'),.144);
- lineMesh('street lane marks',markings,.12,mat('road-markings',colors.stripe),.17);
+ function getAsphaltTexture(){
+  if(world.asphaltTex)return world.asphaltTex;
+  try{
+    const tex=new B.DynamicTexture('asphalt-grain',{width:256,height:256},world.scene,false);
+    const ctx=tex.getContext();
+    ctx.fillStyle='#303538';ctx.fillRect(0,0,256,256);
+    for(let i=0;i<3500;i++){
+      const v=45+Math.floor(rand(i*3.7)*52);
+      ctx.fillStyle='rgb('+v+','+v+','+v+')';
+      ctx.fillRect(Math.floor(rand(i*1.9)*256),Math.floor(rand(i*4.3)*256),1+Math.floor(rand(i*5.1)*2),1+Math.floor(rand(i*2.7)*2));
+    }
+    tex.update();tex.uScale=14;tex.vScale=14;
+    world.asphaltTex=tex;
+    return tex;
+  }catch(_){return null;}
+ }
+ const asph=getAsphaltTexture();
+ const resMat=mat('road-residential',colors.minor,0,.88);
+ const priMat=mat('road-primary',colors.road,0,.86);
+ const trkMat=mat('road-trunk',colors.trunk,0,.84);
+ if(asph){resMat.bumpTexture=asph;priMat.bumpTexture=asph;trkMat.bumpTexture=asph;}
+ lineMesh('OSM mapped local roads',residential,5.7,resMat,.11);
+ lineMesh('OSM mapped primary roads',main,9.8,priMat,.12);
+ lineMesh('OSM mapped A3 highway',trunk,13.6,trkMat,.13);
+ lineMesh('OSM mapped pedestrian paths',path,2.5,mat('footpaths','#9B967E',0,.92),.13);
+ lineMesh('street pavements',sidewalks,1.18,mat('pavements','#81847B',0,.82),.126);
+ lineMesh('pavement edges',curbs,.16,mat('curbs','#999589',0,.75),.144);
+ lineMesh('street lane marks',markings,.12,mat('road-markings',colors.stripe,0,.60),.17);
  world.streetsDrawn=trunk.length+main.length+residential.length+path.length;
  world.roadCount=map.roads.length;
 }
@@ -266,23 +291,53 @@ function buildBuilding(building,idx){
  vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;
  const mesh=new B.Mesh('OSM building '+building.id,world.scene);
  vertex.applyToMesh(mesh);
- const palette=[mat('wall-cream',colors.cream),mat('wall-stone',colors.stone),
- mat('wall-tan',colors.wall),mat('wall-pink',colors.pink),mat('wall-mint',colors.mint)];
+ // PBR wall materials with varied roughness for concrete block realism.
+ const palette=[
+   mat('wall-cream',colors.cream,0,.82),mat('wall-stone',colors.stone,0,.78),
+   mat('wall-tan',colors.wall,0,.80),mat('wall-pink',colors.pink,0,.75),mat('wall-mint',colors.mint,0,.84)
+ ];
  mesh.material=palette[Math.floor(rand(idx*3.2)*palette.length)];
  mesh.isPickable=false;mesh.freezeWorldMatrix();
+ mesh.receiveShadows=true;
+ // Register for shadow casting if shadow generator exists.
+ if(world.shadowGen && Math.hypot(centerX,centerZ)<600){
+   try{world.shadowGen.addShadowCaster(mesh);}catch(e){}
+ }
  const pad=1.0;
  world.colliders.push({minX:minX-pad,maxX:maxX+pad,minZ:minZ-pad,maxZ:maxZ+pad});
  const depth=maxZ-minZ,width=maxX-minX;
  if(width<35&&depth<35&&width>4&&Math.hypot(centerX,centerZ)<1550){
-  const roof=meshBox('roof-cap',centerX,h+.08,centerZ,width*.90,.17,depth*.92,mat('roof',colors.roof));
+  // Raised parapet instead of flat cap — typical Nigerian architecture.
+  const roofMat=mat('roof',colors.roof,0,.72);
+  const roof=meshBox('roof-cap',centerX,h+.08,centerZ,width*.90,.17,depth*.92,roofMat);
   roof.isPickable=false;
-  // Stylized facades; window positions are illustrative, never claimed mapped.
+  roof.receiveShadows=true;
+  // Parapet walls around roof edge.
+  const parapetH=.55,parapetW=.14;
+  for(const [px,pz,pw,pd] of [
+    [centerX,h+parapetH/2+.17,centerZ-depth*.46+parapetW/2,width*.90,parapetH,parapetW],
+    [centerX,h+parapetH/2+.17,centerZ+depth*.46-parapetW/2,width*.90,parapetH,parapetW],
+    [centerX-width*.45+parapetW/2,h+parapetH/2+.17,centerZ,parapetW,parapetH,depth*.92],
+    [centerX+width*.45-parapetW/2,h+parapetH/2+.17,centerZ,parapetW,parapetH,depth*.92]
+  ]){
+    const pwall=meshBox('parapet',px,pz,pd,pw,parapetH,parapetW,mat('parapet-concrete','#C8BDA5',0,.78));
+    pwall.isPickable=false;
+  }
+  // Recessed window geometry with depth and proper glass material.
   if(h>4.5 && width>5 && Math.hypot(centerX,centerZ)<630){
+   const glassMat=mat('window',colors.glass,.12,.35);
+   const frameMat=mat('window-frame','#4A4A48',.08,.65);
    const windows=Math.min(3,Math.floor(width/5));
    const levels=Math.min(3,Math.max(1,Math.floor(h/3)));
    for(let row=0;row<levels;row++)for(let col=0;col<windows;col++){
     const x=minX+(col+1)*width/(windows+1);
-    meshBox('illustrative-window',x,2+row*2.7,minZ-.045,1.0,.84,.07,mat('window',colors.glass));
+    const wy=2+row*2.7;
+    // Frame (recessed into wall).
+    meshBox('window-recess',x,wy,minZ+.04,1.15,.95,.12,frameMat);
+    // Glass pane set back from wall surface.
+    meshBox('window-glass',x,wy,minZ+.08,0.95,.75,.04,glassMat);
+    // Window sill.
+    meshBox('window-sill',x,wy-.48,minZ-.02,1.20,.06,.18,mat('sill','#B8AD95',0,.70));
    }
   }
  }
@@ -291,20 +346,54 @@ function buildBuilding(building,idx){
 function worldFloor(){
  const ground=B.MeshBuilder.CreateGround('region ground',{width:19000,height:19000,subdivisions:1},world.scene);
  ground.position.y=-.08;
- const soil=mat('warm dusty Damaturu ground','#92917B');
- // Deterministic, very small tileable procedural ground texture.
- const tex=new B.DynamicTexture('ground grit',{width:128,height:128},world.scene,false);
- const c=tex.getContext();c.fillStyle='#b7b09b';c.fillRect(0,0,128,128);
- for(let i=0;i<2600;i++){
-   c.fillStyle=rand(i*7.3)>.54?'#a59c88':'#c5bca6';
-   c.fillRect((rand(i*2.23)*128)|0,(rand(i*8.61)*128)|0,1.4,1.4);
+ const soil=mat('warm dusty Damaturu ground','#928A70',0,.92);
+ // High-res tileable procedural ground texture with laterite/sand variation.
+ const tex=new B.DynamicTexture('ground grit',{width:512,height:512},world.scene,false);
+ const c=tex.getContext();
+ // Base sandy laterite.
+ c.fillStyle='#B0A88A';c.fillRect(0,0,512,512);
+ // Multi-layer terrain detail.
+ for(let i=0;i<6000;i++){
+   const palette=['#A59882','#BEB5A0','#8E8670','#C5B999','#9A917A','#D2C8AE'];
+   c.fillStyle=palette[Math.floor(rand(i*7.3)*palette.length)];
+   const size=1+rand(i*3.1)*3;
+   c.fillRect((rand(i*2.23)*512)|0,(rand(i*8.61)*512)|0,size,size);
+ }
+ // Scattered dark pebbles and laterite patches.
+ for(let i=0;i<200;i++){
+   c.fillStyle=rand(i*1.9)>.5?'#7A7060':'#6B6352';
+   c.beginPath();
+   c.arc((rand(i*4.1)*512)|0,(rand(i*5.7)*512)|0,1+rand(i*2.8)*2.5,0,Math.PI*2);
+   c.fill();
+ }
+ // Dry grass tufts.
+ c.strokeStyle='#9B9E70';c.lineWidth=.8;
+ for(let i=0;i<80;i++){
+   const gx=(rand(i*3.3)*512)|0,gy=(rand(i*6.1)*512)|0;
+   for(let j=0;j<3;j++){
+     c.beginPath();c.moveTo(gx,gy);c.lineTo(gx+rand(i*j*1.4)*8-4,gy-3-rand(i*j*2.1)*6);c.stroke();
+   }
  }
  tex.update();tex.wrapU=B.Texture.WRAP_ADDRESSMODE;tex.wrapV=B.Texture.WRAP_ADDRESSMODE;
- tex.uScale=110;tex.vScale=110;soil.diffuseTexture=tex;
+ tex.uScale=85;tex.vScale=85;
+ soil.albedoTexture=tex;
+ // Procedural bump map for ground depth.
+ const bumpTex=new B.DynamicTexture('ground bump',{width:256,height:256},world.scene,false);
+ const bc=bumpTex.getContext();
+ bc.fillStyle='#8080FF';bc.fillRect(0,0,256,256);
+ for(let i=0;i<1200;i++){
+   const v=120+rand(i*5.7)*40;
+   bc.fillStyle='rgb('+Math.round(128+rand(i*2.1)*20-10)+','+Math.round(128+rand(i*3.3)*20-10)+','+Math.round(200+rand(i*1.7)*55)+')';
+   bc.fillRect((rand(i*1.2)*256)|0,(rand(i*4.5)*256)|0,2,2);
+ }
+ bumpTex.update();bumpTex.wrapU=B.Texture.WRAP_ADDRESSMODE;bumpTex.wrapV=B.Texture.WRAP_ADDRESSMODE;
+ bumpTex.uScale=85;bumpTex.vScale=85;
+ soil.bumpTexture=bumpTex; soil.bumpTexture.level=.3;
  ground.material=soil;ground.isPickable=false;
+ ground.receiveShadows=true;
  const horizon=B.MeshBuilder.CreateGround('distant terrain',{width:28000,height:28000},world.scene);
- horizon.position.y=-.16;horizon.material=mat('distant earth','#8E927D');
- horizon.isPickable=false;
+ horizon.position.y=-.16;horizon.material=mat('distant earth','#847E6A',0,.95);
+ horizon.isPickable=false;horizon.receiveShadows=true;
 }
 function bridgeY(x){
  const ax=Math.abs(x);
@@ -335,6 +424,8 @@ function createFlyover(){
    const len=Math.hypot(x2-x1,y2-y1),tilt=Math.atan2(y2-y1,x2-x1);
    const road=meshBox('flyover raised road deck',x,y,.45,len,.35,15.2,deck);road.rotation.z=tilt;
    const girder=meshBox('continuous deck underside',x,y-.35,.45,len,.44,14.5,concrete);girder.rotation.z=tilt;
+   road.receiveShadows=true;
+   if(world.shadowGen&&i%2===0){try{world.shadowGen.addShadowCaster(girder);}catch(_){}}
    for(const side of [-1,1]){
      const z=side*7.62;
      const barrier=meshBox('cantilever safety parapet',x,y+.51,z,len,.79,.32,parapet);
@@ -361,6 +452,7 @@ function createFlyover(){
  }
  // North-south traffic beneath the overpass. Generic traffic lanes.
  const passage=meshBox('north-south underpass',0,.11,0,17.1,.12,320,under);
+ passage.receiveShadows=true;
  for(let z=-154;z<=154;z+=12){
     meshBox('underpass broken middle line',0,.182,z,.13,.017,5.2,stripe);
     for(const x of [-7.9,7.9])meshBox('underpass edge line',x,.184,z,.10,.02,11.8,stripe);
@@ -377,6 +469,7 @@ function createFlyover(){
      const ground=.14,y=bridgeY(x);
      meshBox('bridge pier pad foundation',x,.30,z,2.5,.5,2.9,base);
      const pillar=meshCylinder('flyover reinforced pillar',x,Math.max(1.9,y/2),z,1.30,1.70,Math.max(3.9,y-.6),concrete,null,16);
+     if(world.shadowGen)try{world.shadowGen.addShadowCaster(pillar);}catch(_){}
      meshBox('concrete capital',x,y-.62,z,2.6,.40,2.8,edge);
      world.colliders.push({minX:x-1.2,maxX:x+1.2,minZ:z-1.35,maxZ:z+1.35,hard:true,source:'flyover pier'});
    }
@@ -439,12 +532,68 @@ function createRaceHub(){
  world.interactions.push({x:x+13,z:z-7,radius:18,name:'WASA RACE HQ',message:'Welcome to WASA Race HQ. Racing, spectator mode and tournaments unlock in later development phases.'});
 }
 function tree(x,z,idx){
- const trunk=mat('tree trunk','#645747');
- const leaf=mat('leaves','#456B53');
- meshCylinder('stylized-tree-trunk',x,2,z,.33,.58,4,trunk,null,7);
- for(let j=0;j<2;j++) sphere('leaf-canopy',x+Math.sin(idx+j)*.55,4.5+j*.8,z+Math.cos(idx+j)*.45,1.5,1.2,1.35,leaf);
+ const trunk=mat('tree trunk','#5A4E3D',0,.88);
+ const isNeem=rand(idx*1.7)>.4;
+ const isBaobab=!isNeem && rand(idx*2.3)>.7;
+ if(isBaobab){
+  // Baobab: thick trunk, sparse crown.
+  meshCylinder('baobab-trunk',x,3.2,z,.8,2.4,2.5,trunk,null,8);
+  meshCylinder('baobab-upper',x,5.8,z,.4,.9,1.2,trunk,null,7);
+  const leafMat=mat('baobab-leaves','#5B7B4A',0,.82);
+  // Cross-billboard canopy for realistic volume.
+  for(let j=0;j<3;j++){
+    const angle=j*Math.PI/3;
+    const canopy=B.MeshBuilder.CreatePlane('baobab-canopy-'+j,{width:7,height:5},world.scene);
+    canopy.position.set(x+Math.sin(angle)*.3,7.5,z+Math.cos(angle)*.3);
+    canopy.rotation.y=angle;
+    canopy.material=leafMat; canopy.isPickable=false;
+  }
+ }else{
+  // Neem tree: slender trunk, leafy crown.
+  const trunkH=isNeem?4.5:3.5;
+  meshCylinder('tree-trunk',x,trunkH/2,z,.22,.42,trunkH,trunk,null,8);
+  const leafMat=mat('neem-leaves',isNeem?'#3D6B45':'#4A7850',0,.78);
+  // Cross-billboard canopy layers for natural shape.
+  const crownY=trunkH+1.5, crownR=isNeem?2.2:1.8;
+  for(let j=0;j<2;j++){
+    const canopy=B.MeshBuilder.CreatePlane('tree-canopy-'+j,{width:crownR*2.2,height:crownR*1.8},world.scene);
+    canopy.position.set(x+Math.sin(idx+j)*.3,crownY+j*.4,z+Math.cos(idx+j)*.3);
+    canopy.rotation.y=j*Math.PI/2+idx*.3;
+    canopy.material=leafMat; canopy.isPickable=false;
+  }
+  // Top sphere for fullness.
+  sphere('leaf-crown',x,crownY+.6,z,crownR*.9,crownR*.7,crownR*.85,leafMat);
+ }
 }
-function createStreetscape(){
+function grassClump(x,z,seed){
+ const grassMat=mat('dry-grass','#9B9860',0,.90);
+ for(let i=0;i<3;i++){
+   const blade=B.MeshBuilder.CreatePlane('grass-blade',{width:.25+rand(seed+i)*.15,height:.4+rand(seed+i*2)*.3},world.scene);
+   blade.position.set(x+rand(seed+i*3)*.6-.3,.25,z+rand(seed+i*4)*.6-.3);
+   blade.rotation.y=rand(seed+i*5)*Math.PI;
+   blade.rotation.x=-.1-.05*rand(seed+i*6);
+   blade.material=grassMat; blade.isPickable=false;
+ }
+}
+function scenery(){
+ // Trees are game dressing, not mapped real trees. Do not use them as geographic claims.
+ let treeCount=0;
+ for(let i=0;i<140;i++){
+  const x=(rand(i+21)-.5)*1200,z=(rand(i+307)-.5)*1200;
+  if(dist(x,z,0,0)<85||dist(x,z,-135,105)<22)continue;
+  if(world.colliders.some(b=>x>b.minX-5&&x<b.maxX+5&&z>b.minZ-5&&z<b.maxZ+5))continue;
+  if(treeCount++>55)break;
+  tree(x,z,i);
+ }
+ // Scattered dry grass clumps for Sahel atmosphere.
+ for(let i=0;i<200;i++){
+  const x=(rand(i*1.37+101)-.5)*900,z=(rand(i*2.51+203)-.5)*900;
+  if(dist(x,z,0,0)<70)continue;
+  if(world.colliders.some(b=>x>b.minX-2&&x<b.maxX+2&&z>b.minZ-2&&z<b.maxZ+2))continue;
+  grassClump(x,z,i*7+333);
+ }
+}
+ function createStreetscape(){
  // These fictional, temporary façades are scenery infill only, NOT OSM building locations.
  // Map file and credits remain explicit about what is verified geographical data.
  const wallMats=[
@@ -1104,6 +1253,11 @@ function buildAvatar(config){
  actor.root.position.copyFrom(world.playerPos);
  world.player=actor.root;
  world.avatarRig=actor;
+ if(world.shadowGen){
+  actor.root.getChildMeshes().forEach(m=>{
+    try{world.shadowGen.addShadowCaster(m,true);}catch(_){}
+  });
+ }
  return actor.root;
 }
 
@@ -1167,20 +1321,117 @@ function findSafeSpawn(){
 function setupScene(){
  world.mats={};
  const sc=new B.Scene(world.engine);world.scene=sc;
- sc.clearColor=new B.Color4(.56,.70,.76,1);
- sc.ambientColor=new B.Color3(.38,.39,.36);
- sc.fogMode=B.Scene.FOGMODE_LINEAR;
- sc.fogColor=new B.Color3(.62,.72,.69);
- sc.fogStart=690;sc.fogEnd=2550;
+ sc.clearColor=new B.Color4(.48,.60,.68,1);
+ sc.ambientColor=new B.Color3(.28,.30,.27);
+ sc.fogMode=B.Scene.FOGMODE_EXP2;
+ sc.fogColor=new B.Color3(.58,.66,.62);
+ sc.fogDensity=.00025;
+ // PBR environment: procedural HDR-like environment texture for reflections.
+ const envSize=256;
+ const envTex=new B.RawCubeTexture(sc,[],envSize);
+ // Create a simple gradient environment for PBR reflections.
+ const faces=['px','nx','py','ny','pz','nz'];
+ const faceData=[];
+ for(let f=0;f<6;f++){
+   const data=new Uint8Array(envSize*envSize*4);
+   for(let y=0;y<envSize;y++)for(let x=0;x<envSize;x++){
+     const i=(y*envSize+x)*4;
+     const t=y/envSize; // 0=top, 1=bottom
+     // Sky gradient: deep blue at top, warm haze at horizon
+     const r=Math.round((60+t*140)*(.88+.12*Math.sin(x*.04)));
+     const g=Math.round((80+t*120)*(.90+.10*Math.cos(y*.03)));
+     const b=Math.round((110+t*80)*(.87+.13*Math.sin(x*.05+y*.03)));
+     data[i]=clamp(r,0,255); data[i+1]=clamp(g,0,255); data[i+2]=clamp(b,0,255); data[i+3]=255;
+   }
+   faceData.push(data);
+ }
+ try{
+   envTex.update(faceData);
+   sc.environmentTexture=envTex;
+ }catch(e){console.warn('[WASA] Env texture fallback',e.message);}
+ // Skybox: procedural gradient dome.
+ const skyMat=new B.PBRMaterial('skybox',sc);
+ skyMat.albedoColor=new B.Color3(0,0,0);
+ skyMat.metallic=0; skyMat.roughness=1;
+ skyMat.backFaceCulling=false;
+ skyMat.disableLighting=true;
+ // Create gradient texture for sky.
+ const skyTex=new B.DynamicTexture('sky-gradient',{width:512,height:512},sc,false);
+ const skyCtx=skyTex.getContext();
+ const skyGrad=skyCtx.createLinearGradient(0,0,0,512);
+ skyGrad.addColorStop(0,'#1A3A6B');    // deep blue zenith
+ skyGrad.addColorStop(0.25,'#3B6A9B'); // mid blue
+ skyGrad.addColorStop(0.5,'#7BA5C0');  // pale blue
+ skyGrad.addColorStop(0.7,'#C4BFA5');  // dusty horizon haze
+ skyGrad.addColorStop(0.85,'#D8C8A0');// warm Sahel horizon
+ skyGrad.addColorStop(1.0,'#C8B890');  // ground
+ skyCtx.fillStyle=skyGrad; skyCtx.fillRect(0,0,512,512);
+ // Add subtle cloud wisps.
+ skyCtx.globalAlpha=.12;
+ for(let i=0;i<35;i++){
+   const cx=50+Math.random()*412, cy=80+Math.random()*180;
+   skyCtx.fillStyle='#FFFFFF';
+   skyCtx.beginPath(); skyCtx.ellipse(cx,cy,30+Math.random()*60,8+Math.random()*15,0,0,Math.PI*2); skyCtx.fill();
+ }
+ skyCtx.globalAlpha=1.0;
+ skyTex.update();
+ skyMat.emissiveTexture=skyTex;
+ skyMat.emissiveColor=new B.Color3(1,1,1);
+ const skyDome=B.MeshBuilder.CreateSphere('skyDome',{diameter:24000,segments:24,sideOrientation:B.Mesh.BACKSIDE},sc);
+ skyDome.material=skyMat; skyDome.isPickable=false; skyDome.infiniteDistance=true;
+ skyDome.renderingGroupId=0;
+ // Hemispheric light for ambient fill.
  const hemi=new B.HemisphericLight('sky illumination',new B.Vector3(0,1,0),sc);
- hemi.intensity=.99;hemi.diffuse=new B.Color3(.98,.98,.95);
- hemi.groundColor=new B.Color3(.32,.36,.32);
- const sun=new B.DirectionalLight('Yobe warm sunlight',new B.Vector3(-.35,-1,.45),sc);
- sun.position=new B.Vector3(120,190,-160);
- sun.intensity=.97;sun.diffuse=new B.Color3(1,.94,.84);
+ hemi.intensity=.72;hemi.diffuse=new B.Color3(.95,.95,.92);
+ hemi.groundColor=new B.Color3(.28,.32,.28);
+ // Directional sun with shadows.
+ const sun=new B.DirectionalLight('Yobe warm sunlight',new B.Vector3(-.4,-1,.5).normalize(),sc);
+ sun.position=new B.Vector3(150,260,-200);
+ sun.intensity=1.25;sun.diffuse=new B.Color3(1,.92,.80);
+ // Cascaded Shadow Maps for large-area shadow coverage.
+ try{
+   const shadowGen=new B.ShadowGenerator(2048,sun);
+   shadowGen.useBlurExponentialShadowMap=true;
+   shadowGen.blurKernel=16;
+   shadowGen.depthScale=35;
+   shadowGen.setDarkness(.35);
+   shadowGen.bias=.0015;
+   shadowGen.normalBias=.012;
+   world.shadowGen=shadowGen;
+ }catch(e){console.warn('[WASA] Shadow generator unavailable',e.message);}
+ // SSAO2 for contact-shadow ambient occlusion.
+ try{
+   const ssao=new B.SSAO2RenderingPipeline('ssao',sc,{
+     ssaoRatio:.5, blurRatio:.5
+   });
+   ssao.radius=3.5;
+   ssao.totalStrength=1.1;
+   ssao.base=.15;
+   ssao.samples=12;
+   ssao.maxZ=300;
+   ssao.minZAspect=.4;
+   world.ssao=ssao;
+ }catch(e){console.warn('[WASA] SSAO2 unavailable',e.message);}
+ // HDR rendering pipeline with bloom and tone mapping.
+ try{
+   const pipeline=new B.DefaultRenderingPipeline('hdr',true,sc);
+   pipeline.bloomEnabled=true;
+   pipeline.bloomThreshold=.7;
+   pipeline.bloomWeight=.18;
+   pipeline.bloomScale=.5;
+   pipeline.imageProcessingEnabled=true;
+   pipeline.imageProcessing.toneMappingEnabled=true;
+   pipeline.imageProcessing.toneMappingType=B.ImageProcessingConfiguration.TONEMAPPING_ACES;
+   pipeline.imageProcessing.exposure=1.1;
+   pipeline.imageProcessing.contrast=1.12;
+   pipeline.imageProcessing.vignetteEnabled=true;
+   pipeline.imageProcessing.vignetteWeight=.35;
+   pipeline.imageProcessing.vignetteBlendMode=B.ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
+   world.hdrPipeline=pipeline;
+ }catch(e){console.warn('[WASA] HDR pipeline unavailable',e.message);}
  const camera=new B.ArcRotateCamera('third person',1.84,1.16,8.0,
    new B.Vector3(world.playerPos.x,1.65,world.playerPos.z),sc);
- camera.minZ=.09;camera.maxZ=3200;camera.lowerRadiusLimit=4.2;camera.upperRadiusLimit=12;camera.fov=1.05;
+ camera.minZ=.09;camera.maxZ=14000;camera.lowerRadiusLimit=4.2;camera.upperRadiusLimit=12;camera.fov=1.05;
  camera.lowerBetaLimit=.87;camera.upperBetaLimit=1.33;camera.wheelDeltaPercentage=.018;
  camera.panningSensibility=0;camera.inertia=.51;camera.angularSensibilityX=2300;camera.angularSensibilityY=4500;
  camera.attachControl(canvas,true);
@@ -1195,6 +1446,9 @@ function setupScene(){
  camera.inertialAlphaOffset=0;
  camera.inertialBetaOffset=0;
  world.camera=camera;
+ // Attach SSAO2 and HDR pipeline to camera.
+ if(world.ssao)sc.postProcessRenderPipelineManager.attachCamerasToRenderPipeline('ssao',camera);
+ if(world.hdrPipeline)sc.postProcessRenderPipelineManager.attachCamerasToRenderPipeline('hdr',camera);
  const q=world.quality;
  const ratio=window.devicePixelRatio||1;
  world.engine.setHardwareScalingLevel(q==='low'?Math.max(1.8,ratio):q==='high'?1:clamp(ratio,1,1.65));
