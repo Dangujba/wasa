@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111d1f">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Explore a connected 3D Damaturu district based on mapped roads and illustrative buildings.">
+<title>WASA · Damaturu</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/world/world.css?v=1.0.0">
+<script src="/vendor/babylon.min.js" defer></script>
+<script src="/avatar/wasa-human-lite.js?v=0.8.2" defer></script>
+<script src="/world/world.js?v=1.2.4" defer></script>
+</head>
+<body>
+<div class="game-shell">
+ <svg class="svg-icons" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ico-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="ico-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/></symbol>
+  <symbol id="ico-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M19.1 4.9 17 7m-10 10-2.1 2.1"/></symbol>
+  <symbol id="ico-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3A2.6 2.6 0 0 1 12 7.5a2.6 2.6 0 0 1 1.5 4.7c-1.3.8-1.5 1.2-1.5 2.3M12 17.5h.01"/></symbol>
+  <symbol id="ico-camera" viewBox="0 0 24 24"><path d="M5.6 7a8 8 0 0 1 13 2M18.5 5.5V9h-3.5M18.4 17a8 8 0 0 1-13-2M5.5 18.5V15H9"/></symbol>
+  <symbol id="ico-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="ico-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m14.8 9.2-2 5.6-3.6 1.1 1.1-3.6z"/></symbol>
+  <symbol id="ico-back" viewBox="0 0 24 24"><path d="m13 4-8 8 8 8M6 12h15"/></symbol>
+  <symbol id="ico-run" viewBox="0 0 24 24"><circle cx="15" cy="4" r="2"/><path d="m10 10 4-2 3 3 4 1M14 10l-3 5-4 6M14 10l4 7 4 2M10 10l-4 3"/></symbol>
+  <symbol id="ico-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v7M12 7h.01"/></symbol>
+ </svg>
+ <canvas id="world-canvas" tabindex="0" aria-label="3D Damaturu world. Use Arrow keys to move up, down, left and right. Page Up/Page Down move forward and backward. Drag mouse to look around without steering."></canvas>
+ <div id="boot-overlay" class="boot-overlay">
+  <div class="boot-logo"><span>WASA<span class="gold">.</span></span><small>WORLD 03</small></div>
+  <div class="boot-city">DAMATURU<span class="gold">.</span></div>
+  <div class="boot-status" id="load-status" aria-live="polite">LOADING WORLD</div>
+  <div class="boot-track" role="progressbar" aria-label="City loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="boot-progress"><div id="boot-fill"></div></div>
+  <div class="boot-percentage" id="load-percent">0%</div>
+  <button id="boot-retry" class="retry" hidden>RETRY LOADING</button>
+  <div class="boot-footnote">DAMATURU · YSU CORRIDOR</div>
+ </div>
+ <div id="game-ui" class="game-ui" hidden>
+  <header class="hud-top" aria-label="Game controls">
+   <a class="wasa-mark" href="/" title="WASA main menu" aria-label="WASA main menu">W<span>.</span></a>
+   <div class="hud-top-actions">
+    <button id="landmark-button" type="button" class="icon-btn" title="Landmarks" aria-label="Landmarks" aria-expanded="false"><svg><use href="#ico-pin"/></svg></button>
+    <button id="map-button" type="button" class="icon-btn" title="Toggle mini map" aria-label="Toggle mini map" aria-pressed="true"><svg><use href="#ico-map"/></svg></button>
+    <button id="camera-button" type="button" class="icon-btn" title="Reset camera behind character (C)" aria-label="Reset camera behind character"><svg><use href="#ico-camera"/></svg></button>
+    <button id="graphics-button" type="button" class="icon-btn" title="Cycle graphics quality" aria-label="Cycle graphics quality"><svg><use href="#ico-settings"/></svg><span id="graphics-label" class="icon-dot">AUTO</span></button>
+    <button id="help-button" type="button" class="icon-btn" title="Controls and map attribution" aria-label="Controls and map attribution"><svg><use href="#ico-help"/></svg></button>
+    <a href="/" class="icon-btn" title="Main menu" aria-label="Return to main menu"><svg><use href="#ico-back"/></svg></a>
+   </div>
+  </header>
+<aside class="landmark-panel" id="landmark-panel" hidden aria-label="Damaturu landmarks">
+   <div class="landmark-head"><strong>DAMATURU LANDMARKS</strong><button id="close-landmarks" type="button" aria-label="Close landmark directory">×</button></div>
+   <p>Mapped locations are marked on the mini-map. Unverified businesses remain unpinned.</p>
+   <div id="landmark-list"></div>
+   <button type="button" id="preview-ysu" class="preview-ysu">PREVIEW YSU CAMPUS AREA <span>↗</span></button>
+  </aside>
+  <aside class="missions" aria-label="Explore waypoint">
+    <div class="objective" id="mission-objective">
+      <svg><use href="#ico-pin"/></svg>
+      <span>THE CROSS</span>
+      <span id="objective-range">0m</span>
+    </div>
+    <span id="zone-hint" class="sr-only">Follow the waypoint to the flyover.</span>
+  </aside>
+  <div class="compass-card" id="compass-card" aria-label="Camera compass">
+   <span class="compass-letter" id="compass-direction">N</span>
+   <span id="compass-degrees">0°</span>
+  </div>
+  <section class="mini-map-panel" id="mini-map-panel" aria-label="Damaturu street mini-map">
+    <canvas id="mini-map" width="240" height="240" aria-label="Mapped streets around your character"></canvas>
+    <div class="mini-map-meta"><span id="coord-text">11.74335° N</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" title="OpenStreetMap attribution">© OSM</a></div>
+  </section>
+  <div class="hud-lower">
+    <div class="player-pill" aria-label="Movement">
+      <span class="player-icon" id="player-icon">W</span>
+      <span class="player-brief"><strong id="player-name">WASA EXPLORER</strong><small><span id="walk-mode">WALKING</span><span class="status-split">·</span><span id="speed-display">0.0</span> KM/H</small></span>
+    </div>
+  </div>
+  <div id="interaction-prompt" class="interaction-prompt" hidden><b>E</b><span id="interaction-text">EXPLORE LANDMARK</span></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div class="touch-controls" id="touch-controls">
+    <div id="joystick" class="joystick" role="group" aria-label="Move character">
+      <div class="joystick-ring"></div><div id="joystick-thumb" class="joystick-thumb"></div>
+    </div>
+    <div class="touch-right">
+      <button id="sprint-button" type="button" class="touch-button sprint-button" aria-label="Run"><svg><use href="#ico-run"/></svg></button>
+      <button id="action-button" type="button" class="touch-button action-button" aria-label="Interact">E</button>
+    </div>
+  </div>
+ </div>
+ <div id="help-modal" class="help-modal" hidden>
+  <section class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-heading">
+   <button id="close-help" type="button" class="close-help" aria-label="Close help">×</button>
+   <span class="help-kicker">WASA / DAMATURU</span>
+   <h2 id="help-heading">CONTROLS</h2>
+   <div class="help-row"><span>↑ / PAGE UP / W</span><strong>WALK FORWARD</strong></div>
+   <div class="help-row"><span>↓ / PAGE DOWN / S</span><strong>WALK BACKWARD</strong></div>
+   <div class="help-row"><span>← / →</span><strong>MOVE LEFT / RIGHT</strong></div>
+   <div class="help-row"><span>A / D</span><strong>MOVE LEFT / RIGHT</strong></div>
+   <div class="help-row"><span>SHIFT</span><strong>RUN</strong></div>
+   <div class="help-row"><span>DRAG / SWIPE</span><strong>LOOK AROUND WITHOUT CHANGING YOUR WALK</strong></div>
+   <div class="help-row"><span>C / CAMERA ICON</span><strong>RECENTER CAMERA</strong></div>
+   <div class="help-row"><span>WHEEL / PINCH</span><strong>ZOOM</strong></div>
+   <div class="help-row"><span>E / F</span><strong>INTERACT</strong></div>
+   <p>Mapped road lines and building outlines are sourced from © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). The flyover geometry, shops, heights, signs and scenery are illustrative, not surveyed representations.</p>
+   <p>This remains an exploration preview. Driving, racing and multiplayer will be added separately.</p>
+   <button id="help-close-primary" type="button" class="help-confirm">CONTINUE</button>
+  </section>
+ </div>
+</div>
+</body>
+</html>

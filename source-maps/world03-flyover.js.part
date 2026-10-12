@@ -1,0 +1,82 @@
+function createFlyover(){
+ // NOT surveyed engineering geometry: an illustrative, higher-detail playable
+ // depiction of the Damaturu flyover around The Cross.
+ const deck=mat('flyover asphalt v3','#303D3E',.07,.94);
+ const edge=mat('flyover concrete','#BEB9A9');
+ const parapet=mat('flyover barrier concrete','#CEC8B7');
+ const steel=mat('bridge metal rails','#597478',.34,.54);
+ const concrete=mat('support reinforced concrete','#A5A99E');
+ const base=mat('foundation blocks','#8E958B');
+ const stripe=mat('road lane white','#D8D6CA');
+ const yellow=mat('bridge centerline','#DFBC63');
+ const under=mat('underpass dark asphalt','#364446');
+ const planter=mat('drain channel','#737D71');
+ const bright=mat('median reflective strips','#DAD8AA');
+ const bridgeLength=530,n=50;
+ // Deck level 6.2m at crest; curved approach gradients. No unrealistic solid concrete slab.
+ for(let i=0;i<n;i++){
+   const x1=-bridgeLength/2+i*bridgeLength/n,x2=-bridgeLength/2+(i+1)*bridgeLength/n;
+   const y1=bridgeY(x1),y2=bridgeY(x2),x=(x1+x2)/2,y=(y1+y2)/2;
+   const len=Math.hypot(x2-x1,y2-y1),tilt=Math.atan2(y2-y1,x2-x1);
+   const road=meshBox('flyover raised road deck',x,y,.45,len,.35,15.2,deck);road.rotation.z=tilt;
+   const girder=meshBox('continuous deck underside',x,y-.35,.45,len,.44,14.5,concrete);girder.rotation.z=tilt;
+   for(const side of [-1,1]){
+     const z=side*7.62;
+     const barrier=meshBox('cantilever safety parapet',x,y+.51,z,len,.79,.32,parapet);
+     barrier.rotation.z=tilt;
+     const handrail=meshBox('flyover blue steel handrail',x,y+1.02,z,len,.14,.16,steel);
+     handrail.rotation.z=tilt;
+     const reflector=meshBox('outer reflective safety strip',x,y+.08,side*7.13,len,.045,.16,yellow);
+     reflector.rotation.z=tilt;
+   }
+   // Directional lanes, edge markings and alternating dashed centre markings.
+   for(const z of [-3.8,3.8]){
+     const mark=meshBox('flyover inner road edge',x,y+.215,z,len*.96,.028,.11,stripe);mark.rotation.z=tilt;
+   }
+   if(i%3!==0){
+     const mark=meshBox('flyover center dashed divider',x,y+.221,.45,len*.79,.02,.115,yellow);
+     mark.rotation.z=tilt;
+   }
+   if(i%5===0){
+      for(const side of [-1,1]){
+       const panel=meshBox('small bridge reflectors',x,y+.56,side*7.85,.14,.20,.05,bright);
+       panel.rotation.z=tilt;
+      }
+   }
+ }
+ // North-south traffic beneath the overpass. Generic traffic lanes.
+ const passage=meshBox('north-south underpass',0,.11,0,17.1,.12,320,under);
+ for(let z=-154;z<=154;z+=12){
+    meshBox('underpass broken middle line',0,.182,z,.13,.017,5.2,stripe);
+    for(const x of [-7.9,7.9])meshBox('underpass edge line',x,.184,z,.10,.02,11.8,stripe);
+ }
+ for(const x of [-10.1,10.1]){
+   meshBox('underpass drainage channels',x,.10,0,.72,.12,310,planter);
+   meshBox('underpass parapet retaining wall',x,.88,0,.44,1.4,148,edge);
+   for(let z=-80;z<=80;z+=18)
+     meshBox('underpass reflectors',x,1.13,z,.48,.13,4.5,steel);
+ }
+ // Pier pairs avoid the central crossing; wide abutments and crossbeams connect them.
+ for(const x of [-82,-36,36,82]){
+   for(const z of [-5.15,5.15]){
+     const ground=.14,y=bridgeY(x);
+     meshBox('bridge pier pad foundation',x,.30,z,2.5,.5,2.9,base);
+     const pillar=meshCylinder('flyover reinforced pillar',x,Math.max(1.9,y/2),z,1.30,1.70,Math.max(3.9,y-.6),concrete,null,16);
+     meshBox('concrete capital',x,y-.62,z,2.6,.40,2.8,edge);
+     world.colliders.push({minX:x-1.2,maxX:x+1.2,minZ:z-1.35,maxZ:z+1.35});
+   }
+   meshBox('cross-girder on pier pair',x,bridgeY(x)-.32,.45,2.1,.65,13.2,concrete);
+ }
+ for(const x of [-200,-140,-70,70,140,200]){
+    const y=bridgeY(x);
+    const post=meshCylinder('tall bridge light mast',x,y+4.05,-7.85,.10,.13,7.6,steel);
+    meshBox('bridge light overhead arm',x+.53,y+7.82,-7.85,1.1,.13,.12,steel);
+    sphere('bridge roadway luminaire',x+.95,y+7.75,-7.85,.21,.09,.16,bright);
+ }
+ // Turn-off and approach signs are stylized; no authoritative traffic plan claimed.
+ const sign=makeSignTexture('DAMATURU','THE CROSS',512,170);
+ meshBox('district arrival gantry',4.7,8.95,-9.15,10,.21,.26,concrete);
+ meshBox('district overpass sign support',4.7,7.45,-9.1,.15,3,.18,steel);
+ meshBox('THE CROSS flyover road sign',4.7,8.20,-9.3,9.1,1.65,.14,sign);
+ world.interactions.push({x:-42,z:30,radius:24,name:'THE CROSS FLYOVER',message:'The Cross flyover. This structure is a game-art reconstruction, not an as-built survey.'});
+}

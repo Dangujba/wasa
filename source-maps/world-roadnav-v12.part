@@ -1,0 +1,96 @@
+/* WASA accessible mapped-road navigator (World 1.2).
+ * Uses OpenStreetMap road centerlines, rather than the oversized AABB of
+ * procedurally rotated shop blocks, for safe continuous roadside movement.
+ */
+function prepareRoadNavigation(map){
+ const widths={trunk:14,trunk_link:8,primary:10,primary_link:8,secondary:9,
+   secondary_link:8,tertiary:7,tertiary_link:7,unclassified:6.4,
+   residential:5.8,service:4.4,living_street:4.6};
+ const cell=48,grid=new Map(),segments=[];
+ const put=(seg)=>{
+   const r=seg.width/2+8;
+   for(let a=Math.floor((Math.min(seg.x1,seg.x2)-r)/cell);a<=Math.floor((Math.max(seg.x1,seg.x2)+r)/cell);a++)
+     for(let b=Math.floor((Math.min(seg.z1,seg.z2)-r)/cell);b<=Math.floor((Math.max(seg.z1,seg.z2)+r)/cell);b++){
+       const key=a+','+b;
+       if(!grid.has(key))grid.set(key,[]);
+       grid.get(key).push(seg);
+     }
+ };
+ for(const road of map.roads){
+   const width=widths[road.type];
+   if(!width)continue;
+   for(let j=1;j<road.p.length;j++){
+     const a=road.p[j-1],b=road.p[j],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+     if(length<.3)continue;
+     const count=Math.max(1,Math.ceil(length/24));
+     for(let k=0;k<count;k++){
+       const t=k/count,u=(k+1)/count;
+       const seg={x1:a[0]+dx*t,z1:a[1]+dz*t,x2:a[0]+dx*u,z2:a[1]+dz*u,
+         ux:dx/length,uz:dz/length,width,name:road.name||'',id:road.id,type:road.type};
+       segments.push(seg);put(seg);
+     }
+   }
+ }
+ world.roadNavigation={segments,grid,cell};
+}
+function nearbyRoads(x,z){
+ const nav=world.roadNavigation;
+ if(!nav)return [];
+ const gx=Math.floor(x/nav.cell),gz=Math.floor(z/nav.cell),result=new Set();
+ for(let a=gx-1;a<=gx+1;a++)for(let b=gz-1;b<=gz+1;b++){
+   for(const segment of nav.grid.get(a+','+b)||[])result.add(segment);
+ }
+ return Array.from(result);
+}
+function nearestRoad(x,z,ux=0,uz=0,preferred='',maxDistance=17){
+ let best=null,score=Infinity;
+ const hasDirection=Math.hypot(ux,uz)>.1;
+ for(const s of nearbyRoads(x,z)){
+   const vx=s.x2-s.x1,vz=s.z2-s.z1;
+   const lengthSquared=vx*vx+vz*vz;
+   const t=clamp(((x-s.x1)*vx+(z-s.z1)*vz)/lengthSquared,0,1);
+   const px=s.x1+vx*t,pz=s.z1+vz*t;
+   const distance=Math.hypot(px-x,pz-z);
+   if(distance>maxDistance)continue;
+   const dot=s.ux*ux+s.uz*uz;
+   const direction=hasDirection?(dot>=0?1:-1):1;
+   const aligned=hasDirection?Math.abs(dot):1;
+   const ranking=distance+(hasDirection?(1-aligned)*7.5:0)+
+      (preferred&&s.name===preferred?-1.8:0)+
+      (s.type==='primary'?-0.2:0);
+   if(ranking<score){score=ranking;best={...s,px,pz,distance,
+      dx:s.ux*direction,dz:s.uz*direction,alignment:aligned,ranking};}
+ }
+ return best;
+}
+function isMappedRoadSurface(x,z){
+ // Mapped ground-level asphalt has priority over an approximate building
+ // bounding box. Off-road walking still respects walls and compounds.
+ for(const r of nearbyRoads(x,z)){
+   const dx=r.x2-r.x1,dz=r.z2-r.z1;
+   const t=clamp(((x-r.x1)*dx+(z-r.z1)*dz)/(dx*dx+dz*dz),0,1);
+   const distance=Math.hypot(x-(r.x1+dx*t),z-(r.z1+dz*t));
+   if(distance <=Math.max(1.45,r.width/2-.75))return true;
+ }
+ return false;
+}
+function roadFollowingDirection(x,z,fx,fz){
+ const prior=world.roadFollow;
+ const current=nearestRoad(x,z,fx,fz,prior?.name||'',9);
+ if(!current || current.distance>current.width/2+1.8)return null;
+ if(current.alignment<.50)return null;
+ let chosen=current;
+ // Look slightly ahead of the character so curved road sections connect
+ // smoothly instead of treating the edge of each polyline as a dead end.
+ const look=5;
+ const projected=nearestRoad(x+current.dx*look,z+current.dz*look,
+    current.dx,current.dz,current.name,9);
+ if(projected&&projected.alignment>.52&&projected.distance<projected.width/2+3)
+   chosen=projected;
+ // Don't suddenly jump sideways to an unrelated crossing road at a junction.
+ if(prior&&chosen.name!==prior.name && chosen.alignment<.80)
+   chosen=current;
+ const nx=chosen.dx,nz=chosen.dz;
+ world.roadFollow={name:chosen.name,id:chosen.id};
+ return {dx:nx,dz:nz,offsetX:current.px-x,offsetZ:current.pz-z,road:chosen.name};
+}

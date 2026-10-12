@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061319"><meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Create your WASA avatar with Northern Nigerian traditional outfits, caps and accessories.">
+<title>WASA | Character Creator</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/barlow-condensed-900.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/avatar/avatar.css?v=0.8.0">
+<script src="/vendor/babylon.min.js" defer></script>
+
+<script src="/avatar/wasa-human-lite.js?v=0.8.2" defer></script>
+<script src="/avatar/avatar-model.js?v=0.8.1" defer></script>
+<script src="/avatar/avatar.js?v=0.8.0" defer></script>
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <div class="brand"><span class="brand-glyph">W</span><span>WASA<span class="gold">.</span></span><small>CHARACTER STUDIO</small></div>
+  <div class="top-actions"><span class="stage-pill"><i></i> PRE ALPHA 0.8</span><a class="back-link" href="/">← <span>MAIN MENU</span></a></div>
+</header>
+<main class="studio">
+  <section class="left-panel studio-panel" aria-label="Wardrobe">
+    <div class="pane-heading"><div><p class="kicker">CUSTOMIZE YOUR LEGEND</p><h1>THE <em>LOOK</em><span class="gold">.</span></h1></div><span class="step-number">03 / 08</span></div>
+    <p class="intro">Build a character inspired by Northern Nigeria.</p>
+    <div class="tabs" role="tablist" aria-label="Wardrobe categories">
+      <button role="tab" aria-selected="true" class="tab active" data-category="outfit" type="button">OUTFITS</button>
+      <button role="tab" aria-selected="false" class="tab" data-category="headwear" type="button">CAPS & WRAPS</button>
+      <button role="tab" aria-selected="false" class="tab" data-category="footwear" type="button">FOOTWEAR</button>
+      <button role="tab" aria-selected="false" class="tab" data-category="accessory" type="button">ACCESSORIES</button>
+    </div>
+    <div class="wardrobe-header"><span id="wardrobe-heading">TRADITIONAL WEAR</span><span id="wardrobe-count">08 STYLES</span></div>
+    <div class="item-list" id="wardrobe-items" role="group" aria-label="Wardrobe selections"></div>
+    <div class="wardrobe-info"><span class="info-mark">i</span><span>Pre-alpha wardrobe trial. All outfits can be tried and saved for testing. Buying and earning Wasa Kudi arrive in a future phase.</span></div>
+  </section>
+
+  <section class="view-panel" aria-label="Interactive 3D avatar preview">
+    <div class="view-top"><span><i class="live-indicator"></i> LIVE 3D PREVIEW</span><span class="view-corner">WASA STUDIO / 01</span></div>
+    <canvas id="avatar-canvas" aria-label="Interactive 3D model of your WASA character"></canvas>
+    <div class="preview-fallback" id="preview-fallback" hidden><strong>3D PREVIEW UNAVAILABLE</strong><span>You can still choose your outfit, but 3D graphics are not supported by this browser.</span></div>
+    <div class="viewport-loader" id="viewport-loader" role="status"><span class="loading-spinner"></span><span>PREPARING CHARACTER</span></div>
+    <div class="stage-info"><span class="stage-chip">WORLD 01 <b>DAMATURU</b></span><span id="preview-label">KAFTAN / IVORY</span></div>
+    <div class="pose-controls" role="group" aria-label="Preview character movement"><button type="button" class="active" data-pose="idle">IDLE</button><button type="button" data-pose="walk">WALK</button><button type="button" data-pose="run">RUN</button></div>
+    <div class="view-controls"><button type="button" id="rotate-left" aria-label="Rotate avatar to the left">↶</button><button type="button" id="camera-reset" aria-label="Reset camera view">⌖</button><button type="button" id="rotate-right" aria-label="Rotate avatar to the right">↷</button></div>
+    <div class="stage-hint">DRAG TO ROTATE <span>•</span> SCROLL TO ZOOM</div>
+  </section>
+
+  <section class="right-panel studio-panel" aria-label="Character appearance">
+    <div class="pane-heading"><div><p class="kicker">PLAYER IDENTITY</p><h2>YOUR <em>STYLE</em><span class="gold">.</span></h2></div></div>
+    <div class="account-chip" id="account-chip"><span class="player-monogram">?</span><span><b id="player-name">GUEST PREVIEW</b><small id="player-status">Sign in to save</small></span></div>
+
+    <section class="config-section">
+      <div class="section-label"><span>01</span> BODY FRAME</div>
+      <div class="segmented" id="body-options"><button type="button" data-field="body" data-choice="masculine">MALE</button><button type="button" data-field="body" data-choice="feminine">FEMALE</button></div>
+    </section>
+    <section class="config-section">
+      <div class="section-label"><span>02</span> SKIN TONE</div>
+      <div class="swatches" id="skin-options"></div>
+    </section>
+    <section class="config-section">
+      <div class="section-label"><span>03</span> HAIRSTYLE</div>
+      <div class="selection-row" id="hair-options"></div>
+    </section>
+    <section class="config-section">
+      <div class="section-label"><span>03B</span> FACIAL HAIR</div>
+      <div class="selection-row" id="facialHair-options"></div>
+    </section>
+    <section class="config-section">
+      <div class="section-label"><span>04</span> FABRIC COLOUR</div>
+      <div class="swatches" id="outfitColor-options"></div>
+    </section>
+    <section class="config-section">
+      <div class="section-label"><span>05</span> EMBROIDERY</div>
+      <div class="swatches" id="trimColor-options"></div>
+    </section>
+    <section class="config-section last-section">
+      <div class="section-label"><span>06</span> SELECTED OUTFIT</div>
+      <div class="selected-item"><strong id="selected-outfit">KAFTAN</strong><small id="selected-headwear">ZANNA BUKAR CAP</small></div>
+    </section>
+    <div class="save-area">
+      <div id="save-notice" class="save-notice" role="status" aria-live="polite">Your look is ready to customize.</div>
+      <button id="save-avatar" class="save-btn" type="button">SAVE CHARACTER <span>↗</span></button>
+      <button id="reset-avatar" class="reset-btn" type="button">RESET APPEARANCE</button>
+    </div>
+  </section>
+</main>
+<footer class="footer"><span>WASA <b>CHARACTER SYSTEM V0.8</b></span><span>CULTURE • IDENTITY • COMPETITION</span><span>DEVELOPMENT PREVIEW</span></footer>
+</div>
+</body></html>

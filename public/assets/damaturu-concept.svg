@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" role="img" aria-labelledby="title desc">
+<title id="title">Damaturu-inspired flyover concept art</title>
+<desc id="desc">Stylized elevated highway, architecture, and warm Northern Nigerian twilight. Concept art, not a street map.</desc>
+<defs>
+ <linearGradient id="night" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0c3038"/><stop offset=".56" stop-color="#1d4551"/><stop offset="1" stop-color="#0a1e2a"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#fbe3a1" stop-opacity=".9"/><stop offset=".5" stop-color="#e9ad65" stop-opacity=".5"/><stop offset="1" stop-color="#e9ad65" stop-opacity="0"/></radialGradient>
+ <linearGradient id="road" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#66818a"/><stop offset="1" stop-color="#1a3039"/></linearGradient>
+ <linearGradient id="sand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#715a43"/><stop offset="1" stop-color="#282e2b"/></linearGradient>
+</defs>
+<rect width="900" height="720" fill="url(#night)"/>
+<circle cx="605" cy="220" r="212" fill="url(#sun)"/>
+<circle cx="605" cy="217" r="54" fill="#f3c786" opacity=".75"/>
+<g fill="#c4a46c" opacity=".10"><circle cx="92" cy="100" r="2"/><circle cx="175" cy="155" r="2"/><circle cx="788" cy="155" r="2"/><circle cx="746" cy="95" r="1.5"/><circle cx="402" cy="62" r="2"/></g>
+<path d="M0 388 70 369 160 385 265 347 360 372 448 352 575 385 670 360 779 379 900 346V720H0Z" fill="#294851"/>
+<g fill="#1a3740">
+ <path d="M12 382V286h72v98zM95 388V324h70v75zM174 391V305h81v91zM265 396V350h56v48z"/>
+ <path d="M706 382V311h94v83zM812 394V271h56v113zM871 390V334h29v60z"/>
+</g>
+<g fill="#b2a077" opacity=".55">
+ <path d="M25 316h13v11H25zM51 316h13v11H51zM108 346h14v9h-14zM138 346h14v9h-14z"/>
+ <path d="M189 328h13v10h-13zM221 328h13v10h-13zM720 336h13v10h-13zM757 336h13v10h-13zM825 301h14v10h-14z"/>
+</g>
+<path d="M0 452 175 416 311 429 518 409 702 432 900 409V720H0Z" fill="url(#sand)"/>
+<g opacity=".48"><path d="M0 572 315 478 645 480 900 551" fill="none" stroke="#91a19a" stroke-width="44"/><path d="M0 572 315 478 645 480 900 551" fill="none" stroke="#233944" stroke-width="33"/><path d="M0 572 315 478 645 480 900 551" fill="none" stroke="#dfbc7f" stroke-dasharray="45 42" stroke-width="2"/></g>
+<g fill="#42525b">
+ <path d="M179 440 210 441 208 618 173 626Z"/><path d="M450 394 478 399 494 591 466 590Z"/><path d="M728 346 752 345 782 509 752 517Z"/>
+</g>
+<g fill="#a3a393" opacity=".65"><path d="M173 626h35v9h-39zM463 588h34v9h-34zM748 513h38v10h-36z"/></g>
+<path d="M-38 458 900 292 900 361-38 539Z" fill="#071f2b" opacity=".55" transform="translate(0 13)"/>
+<path d="M-38 448 900 282 900 352-38 526Z" fill="url(#road)" stroke="#82959a" stroke-width="3"/>
+<path d="M-38 455 900 288" stroke="#c4b69b" stroke-width="8" fill="none"/>
+<path d="M-38 512 900 339" stroke="#d2b891" stroke-width="6" fill="none"/>
+<path d="M-12 484 900 320" stroke="#f3dfbd" stroke-width="3" stroke-dasharray="35 28" opacity=".85" fill="none"/>
+<path d="M-38 450 900 284" stroke="#e3e0cb" stroke-width="2" fill="none"/>
+<g fill="#f2c879">
+ <path d="M115 470 159 459 173 463 177 474 120 485 109 479Z"/>
+ <path d="M682 351 727 343 743 348 748 356 688 367 677 359Z"/>
+</g>
+<g fill="#18313a"><path d="M128 469 151 462 166 465 171 469 121 479Z"/><path d="M694 352 720 347 733 351 737 353 685 362Z"/></g>
+<g fill="#0c1e24"><circle cx="129" cy="487" r="7"/><circle cx="167" cy="480" r="7"/><circle cx="696" cy="369" r="6"/><circle cx="737" cy="362" r="6"/></g>
+<g fill="#efc891" opacity=".85"><path d="M65 599l43-27 48 17-39 28z"/><path d="M778 565l39-15 48 23-42 19z"/></g>
+<path d="M0 615 163 572 263 591 375 557 507 582 660 560 900 613V720H0Z" fill="#112831" opacity=".8"/>
+<g stroke="#80b9a8" stroke-width="2" opacity=".35"><path d="M83 592v88M195 576v92M782 588v91"/></g>
+<g fill="#f5cb84"><circle cx="83" cy="586" r="4"/><circle cx="195" cy="571" r="4"/><circle cx="782" cy="582" r="4"/></g>
+<rect width="900" height="720" fill="none" stroke="#c9ebc7" stroke-opacity=".08" stroke-width="20"/>
+</svg>

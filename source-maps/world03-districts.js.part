@@ -1,0 +1,226 @@
+/* WASA World 03 district-scape: illustrative modular commercial blocks,
+ * mixed-use frontage on secondary roads and gated compounds on local streets.
+ * OSM provides street coordinates. Shop and house facades are generated game art.
+ */
+function createStreetDistricts(map){
+ const facade=['#D7BC9B','#D2B69B','#E2D3B7','#CDA07F','#ABB6A0','#BCB09C'].map((c,i)=>mat('world03 brick'+i,c));
+ const roofing=['#8B7968','#777F75','#A1856A'].map((c,i)=>mat('world03 roof'+i,c));
+ const awnings=['#447B76','#986651','#B18A60','#516B8D'].map((c,i)=>mat('world03 canopy'+i,c));
+ const white=mat('world03 trims','#E7D7B5');
+ const steel=mat('world03 shutters','#546B6E');
+ const windows=mat('world03 windows','#496F75',.13,.5);
+ const gate=mat('world03 gate','#62625E');
+ const fence=mat('world03 compound wall','#BFA988');
+ const tank=mat('world03 water tanks','#394A4D',.13,.4);
+ const dark=mat('world03 sign ink','#2A3535');
+ const signText=['PROVISION','PHARMACY','GSM & TECH','TAILOR','TRADERS','RESTAURANT','MINI MART','BANK SERVICES'];
+ const signMats=signText.map(name=>{
+   const tex=new B.DynamicTexture('frontage sign '+name,{width:384,height:82},world.scene,false),cx=tex.getContext();
+   cx.fillStyle='#274F4F';cx.fillRect(0,0,384,82);cx.fillStyle='#E8D6AC';
+   cx.font='bold 34px Arial';cx.textAlign='center';cx.textBaseline='middle';
+   cx.fillText(name,192,41);tex.update();
+   const m=new B.StandardMaterial('shared sign '+name,world.scene);
+   m.diffuseTexture=tex;m.emissiveColor=new B.Color3(.09,.12,.11);m.backFaceCulling=false;
+   return m;
+ });
+ const widths={trunk:14,trunk_link:8,primary:10,primary_link:8,secondary:9,
+ tertiary:7,residential:5.8,unclassified:6,service:4.3,living_street:4.4};
+ const majors=[],locals=[];
+ for(const road of map.roads){
+   if(!(road.type in widths))continue;
+   const commercial=['trunk','primary','secondary','trunk_link','primary_link'].includes(road.type);
+   const mixed=['tertiary','unclassified'].includes(road.type);
+   for(const a of road.p.slice(0,-1).map((v,i)=>({v,i}))){
+     const from=a.v,to=road.p[a.i+1],dx=to[0]-from[0],dz=to[1]-from[1],len=Math.hypot(dx,dz);
+     if(len<8)continue;
+     const cx=(from[0]+to[0])/2,cz=(from[1]+to[1])/2;
+     // Major historical city and YSU corridor; generated scenery caps protect mobile budgets.
+     const inCenter=Math.hypot(cx,cz)<1800;
+     const onCampusCorridor=cz>2200&&cz<7500&&Math.abs(cx)<2500;
+     if(!inCenter&&!onCampusCorridor)continue;
+     const seg={a:from,b:to,len,dx:dx/len,dz:dz/len,w:widths[road.type],type:road.type,mixed,
+       radius:Math.hypot(cx,cz),commercial};
+     (commercial||mixed?majors:locals).push(seg);
+   }
+ }
+ const collide=world.colliders;
+ // Road clearance uses local network, including parallel roads and intersections.
+ const cell=95,grid=new Map();
+ function registerRoad(r){
+  let minX=Math.floor((Math.min(r.a[0],r.b[0])-32)/cell);
+  let maxX=Math.floor((Math.max(r.a[0],r.b[0])+32)/cell);
+  let minZ=Math.floor((Math.min(r.a[1],r.b[1])-32)/cell);
+  let maxZ=Math.floor((Math.max(r.a[1],r.b[1])+32)/cell);
+  for(let i=minX;i<=maxX;i++)for(let j=minZ;j<=maxZ;j++){
+   const k=i+','+j;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(r);
+  }
+ }
+ for(const r of [...majors,...locals])registerRoad(r);
+ function clearance(x,z){
+  const cx=Math.floor(x/cell),cz=Math.floor(z/cell);let near=Infinity;
+  for(let i=cx-1;i<=cx+1;i++)for(let j=cz-1;j<=cz+1;j++){
+   for(const r of grid.get(i+','+j)||[]){
+    const dx=r.b[0]-r.a[0],dz=r.b[1]-r.a[1];
+    const t=clamp(((x-r.a[0])*dx+(z-r.a[1])*dz)/(dx*dx+dz*dz),0,1);
+    near=Math.min(near,Math.hypot(x-r.a[0]-dx*t,z-r.a[1]-dz*t)-r.w/2);
+   }
+  }
+  return near;
+ }
+ function free(x,z,w,d,radius=0){
+   if(Math.hypot(x,z)<86||Math.hypot(x+135,z-105)<39)return false;
+   if(Math.abs(x)>3830||z<-2600||z>8250)return false;
+   const bound=Math.max(w,d)*.73+1;
+   if(clearance(x,z)<Math.min(7,Math.max(3.8,bound*.5)))return false;
+   return !collide.some(c=>x+w/2+radius>c.minX&&x-w/2-radius<c.maxX&&
+                           z+d/2+radius>c.minZ&&z-d/2-radius<c.maxZ);
+ }
+ const stats={shopRows:0,shopUnits:0,residential:0,streetlights:0,stations:0};
+ const rowBudget=205,houseBudget=215;
+ function groupAt(name,x,z,angle){
+   const g=new B.TransformNode(name,world.scene);g.position.set(x,0,z);g.rotation.y=angle;
+   const pieces=[];
+   const add=(name,px,py,pz,w,h,d,m)=>{
+     const o=meshBox(name,px,py,pz,w,h,d,m,g);pieces.push(o);return o;
+   };
+   const finish=()=>{
+     g.computeWorldMatrix(true);
+     // Transform world positions before detaching from parent to preserve orientation.
+     for(const mesh of pieces)mesh.setParent(null);
+     g.dispose();
+   };
+   return {add,finish};
+ }
+ function addColl(x,z,w,d,margin=1){
+   collide.push({minX:x-w/2-margin,maxX:x+w/2+margin,minZ:z-d/2-margin,maxZ:z+d/2+margin});
+ }
+ function shopRow(r,x,z,angle,seed){
+   const units=3+Math.floor(rand(seed*1.3)*4),unit=5.1+rand(seed*4.7)*1.0;
+   const length=units*unit,depth=10.8+rand(seed*1.71)*3,storeys=rand(seed*7.8)>.72?2:1;
+   const h=storeys===2?7.6:3.9;
+   const ext=length*.71+depth*.71;
+   if(!free(x,z,ext*2,ext*2))return false;
+   const {add,finish}=groupAt('connected shop row '+seed,x,z,angle);
+   const wall=facade[Math.floor(rand(seed*1.19)*facade.length)];
+   const shade=awnings[Math.floor(rand(seed*3.9)*awnings.length)];
+   add('connected-commercial-row',0,h/2+.12,0,length,h,depth,wall);
+   add('continuous roofline',0,h+.22,0,length+.4,.28,depth+.36,roofing[Math.floor(rand(seed*9.3)*3)]);
+   add('long continuous veranda canopy',0,2.9,-depth/2-.76,length+.35,.17,1.7,shade);
+   for(let i=0;i<units;i++){
+     const sx=-length/2+(i+.5)*unit;
+     add('retail rolling shutter',sx,1.44,-depth/2-.073,unit-.54,2.62,.085,steel);
+     add('shop header board',sx,3.20,-depth/2-.102,unit-.50,.49,.08,signMats[(seed+i)%signMats.length]);
+     if(i<units-1)add('shared shop pillar',sx+unit/2,1.55,-depth/2-.22,.22,2.9,.23,white);
+     if(storeys===2){
+       add('upper shop window',sx,5.37,-depth/2-.08,unit*.48,1.36,.08,windows);
+       add('upper window lintel',sx,6.21,-depth/2-.42,unit*.6,.13,.80,shade);
+     }
+   }
+   if(seed%5===0){
+     add('water tank base',length*.23,h+.57,depth*.11,1.8,.29,1.9,white);
+     add('roof water tank',length*.23,h+1.14,depth*.11,1.15,.92,1.1,tank);
+   }
+   finish();addColl(x,z,ext*2,ext*2,.7);
+   stats.shopRows++;stats.shopUnits+=units;
+   if(!world.frontageSample)world.frontageSample=[];
+   if(world.frontageSample.length<320)world.frontageSample.push({x:Math.round(x),z:Math.round(z),units});
+   return true;
+ }
+ function compound(r,x,z,angle,seed){
+   const w=14+Math.floor(rand(seed*3.4)*7),depth=13+Math.floor(rand(seed*4.6)*7);
+   const ext=w*.71+depth*.71;
+   if(!free(x,z,ext*2,ext*2))return false;
+   const {add,finish}=groupAt('residential gated compound '+seed,x,z,angle);
+   const h=3.45+(rand(seed*2.13)>.75?2.85:0);
+   add('residential bungalow',0,h/2+.12,1.8,w*.72,h,depth*.65,facade[Math.floor(rand(seed*1.4)*facade.length)]);
+   add('residential roof',0,h+.32,1.8,w*.77,.30,depth*.70,roofing[Math.floor(rand(seed*2.17)*3)]);
+   for(const side of [-1,1])add('compound wall side',side*w*.49,1.23,0,.25,2.4,depth,fence);
+   add('compound rear wall',0,1.23,depth*.48,w,2.4,.27,fence);
+   add('compound front boundary left',-w*.355,1.12,-depth*.48,w*.29,2.2,.28,fence);
+   add('compound front boundary right',w*.355,1.12,-depth*.48,w*.29,2.2,.28,fence);
+   add('compound steel gate',0,1.19,-depth*.49,w*.38,2.32,.20,gate);
+   add('front home door',0,1.25,1.8-depth*.325-.1,1.15,2.2,.12,gate);
+   for(const side of [-1,1])add('home window',side*w*.19,1.92,1.8-depth*.325-.12,1.30,1.15,.1,windows);
+   if(seed%3===0){
+    add('courtyard water tank',w*.31,h+.70,2,1.15,1.02,1.0,tank);
+   }
+   finish();addColl(x,z,ext*2,ext*2,.3);
+   stats.residential++;return true;
+ }
+ // Two generic, clearly illustrative filling-station forecourts. These are not
+ // verified commercial addresses or branded fuel stations.
+ const selectedStationRoads=majors.filter(r=>r.commercial&&r.radius>320&&r.radius<1350&&r.len>23);
+ for(let i=0;i<selectedStationRoads.length&&stats.stations<2;i+=3){
+   const r=selectedStationRoads[i],seed=i*19+89,side=i%2?1:-1;
+   const nx=-r.dz,nz=r.dx,off=r.w/2+14;
+   const x=(r.a[0]+r.b[0])/2+nx*off*side,z=(r.a[1]+r.b[1])/2+nz*off*side;
+   if(!free(x,z,32,31))continue;
+   const yaw=Math.atan2(-r.dz,r.dx)+(side<0?Math.PI:0);
+   const {add,finish}=groupAt('unbranded game fuel station',x,z,yaw);
+   add('fuel station forecourt',0,.17,0,21,.17,18,facade[1]);
+   add('filling station canopy',0,4.45,-3.0,20,.40,10,awnings[0]);
+   for(const sx of [-8,8])for(const zz of [-6,0]){
+     add('fuel canopy support',sx,2.33,zz,.45,4.4,.45,white);
+   }
+   add('station convenience shop',0,1.7,6.0,12,3.3,5,facade[2]);
+   for(const sx of [-4,4]){
+     add('fuel pump housing',sx,1.04,-3,1.3,2.0,.95,steel);
+     add('fuel pump face',sx,1.31,-3.52,.75,.65,.055,windows);
+   }
+   finish();addColl(x,z,36,34,.9);
+   stats.stations++;
+ }
+
+ // Commercial frontage has rows positioned beside each main road without arbitrary gaps.
+ // Iterate deterministically over roadside tiles at approximately 34m intervals.
+ majors.sort((a,b)=>a.radius-b.radius);
+ for(let i=0;i<majors.length&&stats.shopRows<rowBudget;i++){
+  const r=majors[i];
+  if(r.radius<2100&&stats.shopRows>=134)continue;
+  if(r.len<20)continue;
+  const mid=(r.radius>1000?0.45:0.5);
+  const dx=r.dx,dz=r.dz,nx=-dz,nz=dx;
+  const candidates=Math.min(4,Math.max(1,Math.floor(r.len/33)));
+  for(let k=0;k<candidates&&stats.shopRows<rowBudget;k++){
+    const t=(k+.5)/candidates;
+    for(const side of [-1,1]){
+     const seed=i*17+k*3+(side+1)*57;
+     if(r.mixed&&rand(seed*3.3)>.40)continue;
+     if(stats.shopRows>155&&r.radius>2100&&rand(seed*2.33)>.72)continue;
+     const off=r.w/2+9.5;
+     const x=r.a[0]+(r.b[0]-r.a[0])*t+nx*off*side;
+     const z=r.a[1]+(r.b[1]-r.a[1])*t+nz*off*side;
+     const angle=Math.atan2(-dz,dx)+(side<0?Math.PI:0);
+     shopRow(r,x,z,angle,seed);
+    }
+  }
+ }
+ locals.sort((a,b)=>a.radius-b.radius);
+ for(let i=0;i<locals.length&&stats.residential<houseBudget;i++){
+  const r=locals[i];if(r.len<18)continue;
+  if(r.radius<2100&&stats.residential>=132)continue;
+  const segments=Math.min(3,Math.max(1,Math.floor(r.len/32)));
+  for(let j=0;j<segments&&stats.residential<houseBudget;j++){
+    const t=(j+.52)/segments;
+    const side=rand(i*5+j*3)>.5?1:-1,nx=-r.dz,nz=r.dx;
+    const off=r.w/2+14;
+    const x=r.a[0]+(r.b[0]-r.a[0])*t+nx*off*side;
+    const z=r.a[1]+(r.b[1]-r.a[1])*t+nz*off*side;
+    const angle=Math.atan2(-r.dz,r.dx)+(side<0?Math.PI:0);
+    compound(r,x,z,angle,i*31+j);
+  }
+ }
+ // Roadside lampposts and notional petrol stations are visibly generic game scenery.
+ const nearMajors=majors.filter(r=>r.radius<1550&&r.len>12);
+ for(let i=0;i<nearMajors.length&&stats.streetlights<100;i+=8){
+  const r=nearMajors[i],nx=-r.dz,nz=r.dx;
+  const x=(r.a[0]+r.b[0])/2+nx*(r.w/2+3.4),z=(r.a[1]+r.b[1])/2+nz*(r.w/2+3.4);
+  if(clearance(x,z)<1.4)continue;
+  meshCylinder('main road lighting mast',x,3.2,z,.11,.14,6.3,dark);
+  meshBox('streetlamp cap',x,6.4,z,1.35,.13,.21,white);
+  stats.streetlights++;
+ }
+ world.districtCount=stats.shopRows+stats.residential;
+ world.districtStats=stats;
+ console.info('[WASA WORLD03] Urban generator',JSON.stringify(stats));
+}

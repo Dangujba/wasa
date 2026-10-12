@@ -1,0 +1,107 @@
+/* WASA mapped landmarks / destination support, version 3.
+ * OSM-backed pins are exact map geometries (entrances may differ).
+ * User-mentioned but unlocated businesses are directory entries, NOT map pins.
+ */
+function buildLandmarks(map){
+ const expected=[
+  {name:'Golden Souk',kind:'shopping',verifiedOSM:false,locationStatus:'Exact point not verified'},
+  {name:'Eldawoud',kind:'shopping',verifiedOSM:false,locationStatus:'Exact point not verified'},
+  {name:'Commercial banks',kind:'bank',verifiedOSM:false,locationStatus:'Bank branches require surveyed pins'},
+  {name:'Government ministries',kind:'government',verifiedOSM:false,locationStatus:'Ministry buildings require mapped pins'},
+  {name:'Filling stations',kind:'fuel',verifiedOSM:false,locationStatus:'Individual station positions require mapping'}
+ ];
+ const mapped=[...(map.pois||[])];
+ if(map.campus&&!mapped.some(x=>x.id===map.campus.id||x.name===map.campus.name))
+   mapped.push(map.campus);
+ let landmarks=mapped.filter(p=>p.verifiedOSM&&Array.isArray(p.p));
+ if(!landmarks.some(x=>x.name==='Yobe State University')&&map.campus)landmarks.push(map.campus);
+ const supported=['hospital','university','college','place_of_worship','company','ngo','school','bank','fuel','pharmacy','market'];
+ landmarks=landmarks.filter(x=>x.name && (supported.includes(x.kind)||x.name==='Yobe State University'))
+ .filter((p,i,arr)=>arr.findIndex(q=>q.name===p.name)===i);
+ const center={id:'the-cross',name:'The Cross Flyover',kind:'interchange',verifiedOSM:false,
+    locationStatus:'Approximate interchange concept',p:[0,0]};
+ landmarks.unshift(center);
+ const palettes={
+  university:'#91D7DE',hospital:'#D0E9DB',college:'#91D7DE',
+  place_of_worship:'#C6DEC9',interchange:'#EDCE96',
+  company:'#EDCC97',ngo:'#CFD9E3',bank:'#EBD39C',fuel:'#DEC38A',market:'#F2D094'
+ };
+ function labelTexture(title,kind){
+  const tex=new B.DynamicTexture('mapped label '+title,{width:512,height:112},world.scene,false),ctx=tex.getContext();
+  ctx.fillStyle='#17363BD9';ctx.fillRect(0,0,512,112);
+  ctx.fillStyle=palettes[kind]||'#EFD19D';ctx.fillRect(0,0,7,112);
+  ctx.fillStyle='#F9F2E5';ctx.textAlign='center';ctx.textBaseline='middle';
+  const clipped=title.length>30?title.slice(0,27)+'...':title;
+  ctx.font='bold 34px Arial';ctx.fillText(clipped,255,56);tex.update();
+  const m=new B.StandardMaterial('label '+title,world.scene);
+  m.diffuseTexture=tex;m.emissiveColor=new B.Color3(.27,.32,.27);m.backFaceCulling=false;
+  m.disableLighting=true;m.alpha=1;return m;
+ }
+ world.landmarks=landmarks.map((loc,index)=>{
+  const labelMat=labelTexture(loc.name,loc.kind);
+  const board=B.MeshBuilder.CreatePlane('grounded landmark '+loc.name,{width:13.5,height:2.95},world.scene);
+  board.position.set(loc.p[0],9.2,loc.p[1]);board.billboardMode=B.Mesh.BILLBOARDMODE_ALL;
+  board.material=labelMat;board.isPickable=false;board.isVisible=false;
+  const marker=meshCylinder('mapped place marker',loc.p[0],2.8,loc.p[1],.16,.34,5.5,
+    mat('landmark stem '+index,palettes[loc.kind]||'#EBD2AE'));
+  const orb=sphere('mapped place orb '+index,loc.p[0],5.8,loc.p[1],.66,.66,.66,
+    mat('landmark crown '+index,palettes[loc.kind]||'#EBD2AE'));
+  marker.isVisible=false;orb.isVisible=false;
+  return {...loc,board,marker,orb};
+ });
+ world.landmarkDirectory=expected;
+ world.destination=world.landmarks.find(x=>x.name==='The Cross Flyover')||world.landmarks[0];
+ world.interactions.push(...world.landmarks.filter(p=>p.name!=='The Cross Flyover')
+   .map(p=>({x:p.p[0],z:p.p[1],radius:p.kind==='university'?180:30,name:p.name,
+    message:p.kind==='university'?'YSU campus marker from OpenStreetMap. Exact entrance not verified.':
+       'Mapped landmark: '+p.name+'. Location from OpenStreetMap.'})));
+ const list=document.getElementById('landmark-list');
+ if(list){
+   list.innerHTML='';
+   for(const p of world.landmarks){
+     const button=document.createElement('button');button.type='button';button.className='landmark-row';
+     const name=document.createElement('strong');name.textContent=p.name;
+     const meta=document.createElement('small');
+     meta.textContent=p.verifiedOSM?'OSM mapped location':p.locationStatus;
+     button.append(name,meta);
+     button.addEventListener('click',()=>{setDestination(p);document.getElementById('landmark-panel').hidden=true;});
+     list.appendChild(button);
+   }
+   for(const unplaced of expected){
+    const row=document.createElement('div');row.className='landmark-row unplaced';
+    const title=document.createElement('strong');title.textContent=unplaced.name;
+    const note=document.createElement('small');note.textContent=unplaced.locationStatus;
+    row.append(title,note);list.appendChild(row);
+   }
+ }
+}
+function setDestination(place){
+ if(!place)return;
+ world.destination=place;world.missionComplete=false;
+ const label=document.querySelector('#mission-objective span:nth-child(2)');
+ if(label)label.textContent=place.name==='Yobe State University'?'YSU CAMPUS':
+   place.name==='The Cross Flyover'?'THE CROSS':place.name.toUpperCase().slice(0,21);
+ if(place.kind==='university'&&world.map.verifiedRoute?.p?.length){
+    world.activeRoute=world.map.verifiedRoute.p;
+ }else world.activeRoute=null;
+ toast('LANDMARK SELECTED: '+place.name);
+}
+function updateLandmarkVisibility(){
+ if(!world.landmarks)return;
+ const px=world.playerPos.x,pz=world.playerPos.z;
+ for(const p of world.landmarks){
+   const range=Math.hypot(p.p[0]-px,p.p[1]-pz);
+   const visible=range<260;
+   p.board.isVisible=visible;p.marker.isVisible=visible;p.orb.isVisible=visible;
+ }
+}
+function drawLandmarkMapIcons(g,project,w,h){
+ if(!world.landmarks)return;
+ for(const p of world.landmarks){
+   const [x,y]=project(p.p);
+   if(x<7||x>w-7||y<7||y>h-7)continue;
+   g.fillStyle=p.kind==='university'?'#8CE9F0':p.kind==='interchange'?'#F0CF8B':'#E5E0C5';
+   g.strokeStyle='#102C33';g.lineWidth=1.8;
+   g.beginPath();g.arc(x,y,p===world.destination?6.6:3.8,0,Math.PI*2);g.fill();g.stroke();
+ }
+}

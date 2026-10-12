@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06151a">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="WASA. The Challenge City. A multiplayer challenge game set in Damaturu. Development preview.">
+  <title>WASA | The Challenge City</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/barlow-condensed-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css?v=0.1.2">
+  <script src="/loader.js?v=0.2.0" defer></script>
+  <link rel="stylesheet" href="/menu.css?v=0.2.0">
+  <script src="/menu.js?v=0.4.0" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="hero-frame" aria-label="Cinematic WASA game startup">
+      <img class="world-poster" id="world-poster" src="/assets/damaturu-concept.svg" alt="" decoding="async" fetchpriority="high">
+      <canvas class="scene-canvas" id="scene-canvas" aria-hidden="true"></canvas>
+      <div class="colour-grade" aria-hidden="true"></div>
+      <div class="light-bloom" aria-hidden="true"></div>
+      <div class="film-grain" aria-hidden="true"></div>
+      <div class="scene-border" aria-hidden="true"></div>
+      <span id="frame-state" class="visually-hidden">3D scene is loading</span>
+    </div>
+
+    <div class="screen-ui" id="boot-view">
+      <header class="topbar">
+        <div class="studio-sign">
+          <svg class="sign-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M4 12 13 37 24 23 35 37 44 12" stroke="currentColor" stroke-width="6.5" stroke-linejoin="miter"/><path d="M17 7h14" stroke="#EAB56F" stroke-width="4"/></svg>
+          <span class="sign-name">WASA<span class="sign-point">.</span></span>
+        </div>
+        <span class="version">BUILD <b>0.1.2</b></span>
+      </header>
+
+      <main class="center-stage" aria-label="WASA game logo">
+        <div class="location-intro"><span class="location-gem"></span><span>DAMATURU, NIGERIA</span></div>
+        <h1 class="game-logo" aria-label="WASA">
+          <span style="--letter:0">W</span><span style="--letter:1">A</span><span style="--letter:2">S</span><span style="--letter:3">A</span><i>.</i>
+        </h1>
+        <div class="subline"><span class="subline-rule"></span><span>THE CHALLENGE CITY</span><span class="subline-rule"></span></div>
+      </main>
+
+      <div class="bottom-area">
+        <section class="boot-panel" aria-label="Game loading progress">
+          <div class="load-row">
+            <div class="status-left">
+              <span class="loader-icon" aria-hidden="true"></span>
+              <span id="boot-status" aria-live="polite">STARTING</span>
+            </div>
+            <span id="boot-percent" class="load-percentage" aria-live="off">00<span>%</span></span>
+          </div>
+          <div id="progressbar" class="track" role="progressbar" aria-label="Game startup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="track-fill" class="track-fill"></div>
+            <div id="track-glow" class="track-glow"></div>
+          </div>
+          <div class="meta-row">
+            <span id="boot-detail">CHECKING DEVICE</span>
+            <span id="boot-bytes">BOOT 001</span>
+          </div>
+
+          <div class="postboot" id="postboot" hidden>
+            <div class="ready-label"><span class="ready-indicator"></span><span id="ready-detail">3D SCENE READY</span></div>
+            <button class="replay-button" id="reboot-button" type="button">REPLAY <span aria-hidden="true">↻</span></button>
+          </div>
+
+          <div class="error-panel" id="error-panel" hidden>
+            <span id="error-message" role="alert">STARTUP ERROR</span>
+            <button class="retry-button" id="retry-button" type="button">RETRY <span aria-hidden="true">↻</span></button>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <span class="footer-location">WORLD 01 <span class="footer-separator">/</span> DAMATURU</span>
+          <span id="loading-tip" class="footer-tip">CHALLENGE. RACE. WATCH.</span>
+          <span class="footer-state">PRE-ALPHA <span class="footer-separator">/</span> PREVIEW</span>
+        </footer>
+      </div>
+    </div>
+
+    <section class="game-menu" id="game-menu" hidden aria-label="WASA main menu">
+      <header class="menu-top">
+        <div class="menu-mini-brand"><span class="wasa-icon">W</span><span>WASA<span class="gold">.</span></span><small>THE CHALLENGE CITY</small></div>
+        <div class="menu-account">
+          <span class="connection-state"><i></i> DEV SERVER ONLINE</span>
+          <span class="player-greeting" id="player-greeting"></span>
+          <button type="button" id="account-button" class="menu-account-btn">SIGN IN</button>
+        </div>
+      </header>
+
+      <main class="menu-core">
+        <div class="menu-eyebrow"><span class="gold-diamond">◆</span> WORLD 01 <span class="menu-eyebrow-line"></span> DAMATURU, NIGERIA</div>
+        <h1 class="menu-headline">THE<br><em>CHALLENGE</em><br>CITY<span class="gold">.</span></h1>
+        <p class="menu-intro">Your city. Your rivals. Your glory.</p>
+        <nav class="game-actions" aria-label="Main game navigation">
+          <button type="button" class="game-action action-primary" data-nav="play">
+            <span class="action-symbol">▶</span><span class="action-label">PLAY WASA<small>ENTER 3D DAMATURU</small></span><span class="action-arrow">↗</span>
+          </button>
+          <button type="button" class="game-action" data-nav="character"><span class="action-symbol">◈</span><span class="action-label">MY CHARACTER<small>OPEN 3D CHARACTER STUDIO</small></span><span class="action-arrow">›</span></button>
+          <button type="button" class="game-action" data-nav="challenges"><span class="action-symbol">⚔</span><span class="action-label">CHALLENGES<small>RACING AND RANKED DUELS</small></span><span class="action-arrow">›</span></button>
+          <button type="button" class="game-action" data-nav="watch"><span class="action-symbol">◎</span><span class="action-label">WATCH LIVE<small>SPECTATOR ARENA</small></span><span class="action-arrow">›</span></button>
+          <button type="button" class="game-action" data-nav="settings"><span class="action-symbol">⚙</span><span class="action-label">SETTINGS<small>DISPLAY AND PERFORMANCE</small></span><span class="action-arrow">›</span></button>
+        </nav>
+      </main>
+      <footer class="menu-footer"><span><i class="menu-status-dot"></i> PRE ALPHA 0.2.0</span><span>THE CHALLENGE STARTS HERE</span><span>WASA DAMATURU</span></footer>
+    </section>
+
+    <section class="world-preview" id="world-preview" hidden aria-label="3D world preview">
+      <header class="preview-bar"><span>WASA <b>WORLD PREVIEW</b></span><button type="button" id="preview-back" class="mini-back">← MAIN MENU</button></header>
+      <div class="preview-foot"><span>DEVELOPMENT SCENE <b>NOT THE FINISHED DAMATURU MAP</b></span><span>DRAG TO ORBIT. SCROLL TO ZOOM.</span></div>
+    </section>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <section class="menu-modal" id="menu-modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+        <header class="modal-head"><span id="dialog-kicker" class="modal-kicker">WASA</span><button id="modal-close" class="modal-close" type="button" aria-label="Close window">×</button></header>
+        <h2 id="dialog-title">PLAYER ACCOUNT</h2>
+        <div id="dialog-body" class="modal-body"></div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

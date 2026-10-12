@@ -1,0 +1,3 @@
+*.osm linguist-generated=true
+public/vendor/*.min.js linguist-vendored
+public/world/data/*.json linguist-generated=true

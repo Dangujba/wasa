@@ -1,0 +1,146 @@
+@font-face{font-family:"Barlow Condensed";src:url("/assets/fonts/barlow-condensed-900.woff2") format("woff2");font-style:normal;font-weight:900;font-display:swap}
+:root{--wasa-gold:#f5be72;--wasa-mint:#9ff0d5;--wasa-fog:#b8cbc8}
+body.menu-active .hero-frame .colour-grade{background:linear-gradient(90deg,#041014f6 0%,#06171aef 27%,#0b2329bd 52%,#0e282864 80%,#081a1bc7 100%),linear-gradient(0deg,#030b0de8 0%,transparent 50%,#041015b5 100%)}
+body.menu-active .hero-frame .world-poster{filter:saturate(.94) contrast(1.1) brightness(.73)}
+body.menu-active .hero-frame.engine-active .world-poster{opacity:.20}
+.game-menu{z-index:7;position:relative;min-height:100svh;display:flex;flex-direction:column;padding:0 clamp(26px,6vw,104px);animation:menu-reveal .75s both}
+.menu-top{height:104px;display:flex;align-items:center;justify-content:space-between;gap:22px;border-bottom:1px solid #c6e0d01a}
+.menu-mini-brand{font-family:"Barlow Condensed",Impact,sans-serif;font-size:34px;letter-spacing:.04em;display:flex;align-items:center;gap:11px}
+.menu-mini-brand .wasa-icon{width:41px;height:41px;border:1px solid #dbeddb70;display:grid;place-items:center;clip-path:polygon(0 0,100% 0,100% 84%,80% 100%,0 100%);font-size:29px;font-weight:900}
+.menu-mini-brand small{font-family:"DM Sans",sans-serif;font-size:8px;letter-spacing:.22em;font-weight:600;color:#9aafaa;margin-left:5px;align-self:flex-end;padding-bottom:8px}
+.gold{color:var(--wasa-gold)}
+.menu-account{display:flex;align-items:center;gap:15px;font-size:10px;letter-spacing:.1em}
+.connection-state{display:flex;align-items:center;gap:8px;color:#bad1c4;white-space:nowrap}
+.connection-state i,.menu-status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#72dfb6;box-shadow:0 0 15px #72dfb6}
+.player-greeting{color:#e5e5dc;font-weight:700;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-account-btn,.mini-back{border:1px solid #d7eadd64;padding:12px 20px;color:#f7eddd;background:#12373b91;cursor:pointer;letter-spacing:.12em;font-size:10px;font-weight:700;white-space:nowrap;transition:background .18s,border-color .18s}
+.menu-account-btn:hover,.mini-back:hover{background:#386054a6;border-color:#eff0dcb2}
+.game-menu button:focus-visible,.menu-modal button:focus-visible,.menu-modal input:focus-visible{outline:2px solid var(--wasa-gold);outline-offset:3px}
+.menu-core{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;width:min(615px,100%);padding:55px 0 64px}
+.menu-eyebrow{font-size:11px;color:#e6d6b9;font-weight:700;letter-spacing:.21em;display:flex;align-items:center;gap:12px}
+.gold-diamond{color:var(--wasa-gold);font-size:13px}
+.menu-eyebrow-line{height:1px;background:#c7d4c4a1;width:32px}
+.menu-headline{font-family:"Barlow Condensed",Impact,"Arial Narrow",sans-serif;font-size:clamp(72px,9.4vw,138px);letter-spacing:.005em;line-height:.78;margin:32px 0 18px;font-weight:900;color:#f4f1e6;text-shadow:0 15px 55px #0009}
+.menu-headline em{color:var(--wasa-mint);font-style:normal}
+.menu-intro{margin:13px 0 33px;color:#becac5;font-size:16px;letter-spacing:.03em}
+.game-actions{display:flex;flex-direction:column;width:min(475px,100%);gap:6px}
+.game-action{display:flex;align-items:center;gap:15px;width:100%;min-height:58px;color:#ebefdf;background:#081e25b8;border:1px solid #c6dac335;text-align:left;cursor:pointer;padding:10px 19px;transition:background .2s,transform .2s,border-color .2s}
+.game-action:hover{background:#28564be1;border-color:#b7eadc9b;transform:translateX(5px)}
+.action-primary{min-height:73px;background:linear-gradient(110deg,#b4e3c7,#75bead);border-color:#c6f2da;color:#0a2730;box-shadow:0 13px 35px #0006}
+.action-primary:hover{background:linear-gradient(100deg,#def3d4,#8ed5c1)}
+.action-symbol{font-size:20px;display:inline-flex;width:27px;justify-content:center;flex:0 0 27px}
+.action-label{flex:1;font-family:"Barlow Condensed",Impact,sans-serif;font-size:25px;font-weight:900;letter-spacing:.07em;line-height:1.05}
+.action-label small{font-family:"DM Sans",sans-serif;display:block;font-size:9px;font-weight:600;letter-spacing:.12em;opacity:.77;margin-top:6px}
+.action-arrow{font-size:24px;line-height:1}
+.menu-footer{display:flex;justify-content:space-between;align-items:center;gap:15px;font-size:10px;letter-spacing:.15em;color:#adbfb7;border-top:1px solid #c7e2d42e;min-height:70px;white-space:nowrap}
+.menu-footer span:first-child{display:flex;gap:10px;align-items:center}
+.world-preview{position:absolute;inset:0;z-index:8;pointer-events:none}
+.preview-bar,.preview-foot{display:flex;position:absolute;left:24px;right:24px;align-items:center;justify-content:space-between;gap:20px;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:#f5f5e7;text-shadow:0 3px 14px #081417}
+.preview-bar{top:24px}
+.preview-bar span{font-family:"Barlow Condensed",sans-serif;font-size:26px;letter-spacing:.03em}
+.preview-bar b{font-family:"DM Sans",sans-serif;font-weight:600;font-size:11px;margin-left:13px;color:#d4d2c9}
+.preview-foot{bottom:26px;font-size:10px}
+.preview-foot b{display:block;font-size:9px;color:#d8b980;margin-top:5px}
+.preview-bar button{pointer-events:auto}
+.hero-frame.world-interactive .scene-canvas{pointer-events:auto;touch-action:none}
+.modal-backdrop{position:fixed;inset:0;z-index:15;background:#01090cd9;backdrop-filter:blur(13px);display:flex;justify-content:flex-end;align-items:stretch}
+.menu-modal{background:linear-gradient(145deg,#102a2f,#071b22);width:min(480px,100%);min-height:100%;border-left:1px solid #d6ead23b;box-shadow:-20px 0 80px #0009;overflow-y:auto;padding:clamp(23px,4vw,48px);animation:drawer-enter .29s ease-out both}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.modal-kicker{font-size:10px;color:#eed3a3;letter-spacing:.24em;font-weight:700}
+.modal-close{border:1px solid #d9e4d83e;color:#daeadd;background:#163239b3;width:39px;height:39px;font-size:27px;line-height:1;cursor:pointer}
+.menu-modal h2{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(47px,6vw,66px);line-height:.98;letter-spacing:.015em;margin:27px 0 13px}
+.modal-body{padding-top:12px;color:#d8e6df}
+.panel-lead{color:#a5beb9;line-height:1.7;margin:0 0 25px;font-size:14px}
+.form-grid{display:grid;gap:14px}
+.field-label{display:grid;gap:7px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:#d7e4d6}
+.field-label input{height:46px;border:1px solid #abc9bc4f;background:#04161d;color:#fff;padding:12px;font:600 15px "DM Sans",sans-serif;outline:0;border-radius:2px;min-width:0}
+.field-label input:focus{border-color:#c8eabf}
+.action-button{cursor:pointer;color:#082b2c;background:#bde5cb;border:1px solid #c8e8cd;min-height:47px;padding:12px 16px;font-size:12px;font-weight:700;letter-spacing:.12em;margin-top:5px}
+.action-button:hover{background:#e4f6d7}
+.secondary-button{cursor:pointer;color:#d9eee1;border:1px solid #a2ccb65c;padding:11px 15px;background:#173d3e63;font-size:11px;letter-spacing:.12em;font-weight:700}
+.secondary-button:hover{background:#2b5b50}
+.inline-links{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:22px}
+.inline-links button{border:0;background:transparent;color:#ebcd9d;font-size:12px;cursor:pointer;padding:7px 0}
+.inline-links button:hover{text-decoration:underline}
+.form-message{font-size:13px;line-height:1.6;min-height:16px;color:#ffd2af;margin:4px 0 0}
+.form-message.success{color:#99f0bd}
+.profile-card{border:1px solid #dbe9d43b;background:#1b41434d;padding:25px;display:flex;align-items:center;gap:16px;margin:15px 0 24px}
+.profile-avatar{width:60px;height:60px;border:1px solid #c6eaca8c;background:#27544d;display:grid;place-items:center;color:#dff2db;font-family:"Barlow Condensed",Impact,sans-serif;font-size:42px;flex:0 0 60px}
+.profile-name{font-size:22px;font-family:"Barlow Condensed",Impact,sans-serif;font-weight:900;letter-spacing:.08em;overflow-wrap:anywhere}
+.muted{color:#a4beb6;font-size:12px;line-height:1.6}
+.profile-details{display:grid;gap:13px;margin:0 0 25px}
+.detail-line{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;border-bottom:1px solid #d4e4d528;padding:8px 0}
+.detail-line span:first-child{color:#a4c2b9}
+.detail-line strong{font-size:12px;overflow-wrap:anywhere;text-align:right}
+.locked-list{display:grid;gap:10px}
+.locked-item{display:flex;align-items:center;gap:13px;border:1px solid #8dad9e37;padding:16px;background:#09272d83}
+.locked-icon{color:#f2c47b;font-size:22px;flex:0 0 27px}
+.locked-item b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:22px;letter-spacing:.04em}
+.locked-item small{display:block;font-size:11px;color:#b4c9be;margin-top:4px}
+.locked-item .locked-tag{margin-left:auto;color:#f2c47b;font-size:10px;letter-spacing:.1em}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:13px;padding:16px 0;border-bottom:1px solid #a6d2b538}
+.setting-row b{display:block;font-size:14px}
+.setting-row small{display:block;color:#a0beb0;font-size:11px;margin-top:6px}
+.setting-row select{background:#08212b;color:#edf3e8;border:1px solid #c0e9bc6d;padding:9px 11px;min-width:90px}
+.setting-row input[type=checkbox]{accent-color:#9de9bd;width:19px;height:19px}
+.account-warning{font-size:12px;line-height:1.6;padding:12px;border:1px solid #b8a47c59;background:#54442e29;color:#f1d29d}
+.account-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.danger-button{cursor:pointer;background:transparent;border:1px solid #ffae966b;color:#ffd0bb;padding:10px 13px;font-size:11px}
+.danger-button:hover{background:#b5473136}
+.menu-loader-fallback{position:fixed;right:20px;bottom:20px;background:#102b32;color:#ebdbbc;border:1px solid #d1e9be5b;padding:12px 16px;z-index:20;font-size:12px}
+@keyframes menu-reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes drawer-enter{from{opacity:.4;transform:translateX(35px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:900px){
+ .menu-top{height:83px}
+ .menu-core{padding:35px 0 45px}
+ .menu-headline{font-size:clamp(76px,13vw,113px)}
+ .menu-footer span:nth-child(2){display:none}
+ .menu-mini-brand small,.connection-state{display:none}
+}
+@media(max-width:520px){
+ .game-menu{padding:0 20px}
+ .menu-top{height:69px}
+ .menu-mini-brand{font-size:28px}
+ .menu-mini-brand .wasa-icon{width:34px;height:34px;font-size:25px}
+ .menu-account-btn{padding:10px 11px}
+ .player-greeting{max-width:110px;font-size:10px}
+ .menu-core{justify-content:center;padding:30px 0 25px}
+ .menu-eyebrow{font-size:9px;letter-spacing:.08em}
+ .menu-headline{font-size:clamp(77px,19.5vw,104px);line-height:.83;margin:20px 0 12px}
+ .menu-intro{font-size:12px;margin:12px 0 20px}
+ .game-actions{gap:5px}
+ .game-action{min-height:53px;padding:7px 14px}
+ .action-primary{min-height:65px}
+ .action-symbol{width:24px;flex-basis:24px;font-size:18px}
+ .action-label{font-size:22px}
+ .action-label small{font-size:8px;margin-top:5px}
+ .menu-footer{min-height:52px;font-size:8px}
+ .menu-modal{padding:23px}
+ .modal-backdrop{align-items:stretch}
+ .preview-bar,.preview-foot{left:14px;right:14px;gap:10px}
+ .preview-foot{font-size:8px;align-items:flex-end}
+ .preview-foot span:last-child{text-align:right}
+}
+@media(max-height:700px){
+ .menu-top{height:57px}
+ .menu-core{padding:14px 0}
+ .menu-headline{font-size:clamp(62px,10vh,94px);margin:13px 0 8px}
+ .menu-intro{margin:8px 0 11px}
+ .game-action{min-height:44px}
+ .action-primary{min-height:50px}
+ .action-label{font-size:19px}
+ .action-label small{font-size:8px;margin-top:3px}
+ .menu-footer{min-height:42px}
+}
+@media(prefers-reduced-motion:reduce){.game-menu,.menu-modal{animation:none}}
+body.user-reduced-motion .game-menu,body.user-reduced-motion .menu-modal{animation:none}
+body.user-reduced-motion .game-action{transition:none}
+@media(min-width:901px) and (max-height:1050px){
+ .menu-core{padding:22px 0 24px}
+ .menu-headline{font-size:clamp(80px,8.5vw,114px);margin:18px 0 10px}
+ .menu-intro{margin:8px 0 21px}
+ .game-action{min-height:53px}
+ .action-primary{min-height:64px}
+ .menu-footer{min-height:59px}
+ .menu-top{height:78px}
+}

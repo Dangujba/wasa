@@ -1,0 +1,79 @@
+/* Yobe State University district concept assets.
+ * Campus polygon is grounded in OSM way 845940671; sample campus buildings
+ * below are explicitly NOT surveyed structures and have fictional placement.
+ */
+function createUniversityDistrict(map){
+ const shape=map.campusOutline;
+ if(!Array.isArray(shape)||shape.length<3)return;
+ // Official campus outline from OpenStreetMap; not an architectural survey.
+ const boundary=mat('YSU boundary tone','#57746F',.04,.7);
+ const outline=[];
+ for(let i=1;i<shape.length;i++){
+   const a=shape[i-1],b=shape[i];
+   const len=Math.hypot(a[0]-b[0],a[1]-b[1]);
+   if(len<1||len>1000)continue;
+   outline.push([a[0],a[1],b[0],b[1]]);
+ }
+ lineMesh('OpenStreetMap YSU campus boundary',outline,.9,boundary,.155);
+ function within(x,z){
+   let inside=false;
+   for(let i=0,j=shape.length-1;i<shape.length;j=i++){
+      const a=shape[i],b=shape[j];
+      if((a[1]>z)!==(b[1]>z) && x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1]+1e-8)+a[0])inside=!inside;
+   }
+   return inside;
+ }
+ function nearRoad(x,z){
+   let nearest=Infinity;
+   for(const r of map.roads){
+     for(let i=1;i<r.p.length;i++){
+       const a=r.p[i-1],b=r.p[i],cx=(a[0]+b[0])/2,cz=(a[1]+b[1])/2;
+       if(Math.hypot(cx-x,cz-z)>220)continue;
+       const dx=b[0]-a[0],dz=b[1]-a[1];
+       const t=clamp(((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz+1e-8),0,1);
+       nearest=Math.min(nearest,Math.hypot(x-a[0]-dx*t,z-a[1]-dz*t));
+     }
+   }
+   return nearest;
+ }
+ const wall=mat('campus building limestone','#C6B7A4');
+ const glass=mat('campus windows','#47757B',.09,.5);
+ const trim=mat('campus entry edge','#C6D5CC');
+ const roof=mat('campus roof','#7E8E87');
+ const green=mat('campus garden','#718B67');
+ let erected=0;
+ const center=map.campus.p;
+ const candidates=[
+   [75,-80],[-80,20],[112,48],
+   [-135,-185],[115,-210],[-185,180],[165,150],[-260,0],[225,340],
+   [-130,355],[110,485],[-240,515],[300,-225],[230,-440],[5,680]
+ ];
+ for(let i=0;i<candidates.length&&erected<7;i++){
+   const [dx,dz]=candidates[i];
+   const x=center[0]+dx,z=center[1]+dz;
+   if(!within(x,z)||nearRoad(x,z)<40)continue;
+   if(world.colliders.some(c=>x+22>c.minX&&x-22<c.maxX&&z+18>c.minZ&&z-18<c.maxZ))continue;
+   const storeys=i%3===0?2:1,h=storeys===2?7.2:4.2;
+   meshBox('illustrative YSU district academic block',x,h/2+.1,z,36,h,21,wall);
+   meshBox('illustrative YSU roof',x,h+.24,z,37,.30,22,roof);
+   for(const side of [-1,1])for(let j=0;j<4;j++){
+     const xx=x-12+j*7.5;
+     meshBox('illustrative campus window',xx,2.1,z+side*10.58,3,1.40,.09,glass);
+     if(storeys===2)meshBox('illustrative upper campus window',xx,5.34,z+side*10.58,3,1.3,.09,glass);
+   }
+   meshBox('academic hall entrance',x,1.26,z-10.72,2.3,2.44,.10,glass);
+   meshBox('hall entry cover',x,3,z-12.10,7,.18,3.4,trim);
+   world.colliders.push({minX:x-19,maxX:x+19,minZ:z-12,maxZ:z+12});
+   erected++;
+ }
+ world.universityArtBlocks=erected;
+ // Concept sign is near the end of the mapped approach street, not a real gate position.
+ const route=map.verifiedRoute?.p||[];
+ if(route.length){
+   const last=route[route.length-1],x=last[0]+15,z=last[1]+17;
+   const sign=makeSignTexture('YSU','CAMPUS AREA',512,180);
+   meshBox('university-area sign',x,4.8,z,9.8,1.95,.24,sign);
+   for(const a of [-4.1,4.1])
+     meshCylinder('university district sign support',x+a,2.4,z,.22,.25,4.7,roof);
+ }
+}
