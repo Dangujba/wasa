@@ -891,9 +891,12 @@ for clip, duration in [('idle', 4.0), ('walk', 1.0), ('run', .68), ('robe_walk',
             knee = ('lowerleg01.'+side)
             stride = (.40 if running else .24) if robed else (.65 if running else .34)
             knee_bend = (.68 if running else .40) if robed else (.95 if running else .56)
-            pose[leg] = [swing*stride if moving else 0, 0, sign*.035]
+            # The anatomical base is authored with separated feet. Adduct the
+            # thighs into a relaxed stance instead of adding more outward roll.
+            hip_roll = -sign*(.105 if FEMALE else .12)
+            pose[leg] = [swing*stride if moving else 0, 0, hip_roll]
             pose[knee] = [max(0, swing)*knee_bend if moving else .015, 0, 0]
-            pose['foot.'+side] = [-pose[leg][0]-pose[knee][0]*.65 if moving else -.015, 0, 0]
+            pose['foot.'+side] = [-pose[leg][0]-pose[knee][0]*.65 if moving else -.015, 0, -hip_roll]
             # Base arms are angled out. Lower them to a relaxed position while
             # retaining a small elbow bend instead of a rigid T/A pose.
             pose['upperarm01.'+side] = [-swing*(.45 if running else .28) if moving else math.sin(phase)*.008,

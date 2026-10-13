@@ -41,7 +41,7 @@ existing schema. The procedural renderer is a download-error fallback.
 See `public/avatar/models/ART-SOURCES.md` for the CC0 bases, garment/animation
 pipeline, limits and reproducible build (`python tools/build-wardrobe.py`).
 The bundled Babylon 8.26.0 loader needs no external runtime CDN or decoder.
-Both GLBs pass Khronos validation with zero errors/warnings/infos. All 19 checks
+Both GLBs pass Khronos validation with zero errors/warnings/infos. All 20 checks
 run with `node --test tests/*.test.cjs`, including all nine outfits, weights,
 loops, articulation, transitions, world-scale floor tolerance, scarf/accessory
 selection, loading races and repeated wardrobe resource counts.
@@ -84,6 +84,12 @@ collisions, head/cloth settling, and acceleration/turn limits. Browser QA uses
 `?debug=1&motion=flyover` or `?debug=1&motion=curb` with optional body/outfit
 selections; these previews do not save profile data. A debug overlay reports
 surface height and sole clearances. Real-phone testing is still deferred.
+
+The idle/walk/run clips now bring the legs from the base mesh's separated-foot
+pose into a relaxed stance beneath the hips. Counter-rotation at the ankles
+keeps idle soles level. The stance regression covers all nine outfits with and
+without terrain IK, including knee splay and walk/run transitions. Model URLs
+are versioned so existing browser caches load the corrected clips.
 
 Releases are packaged from a clean committed tree, with a commit/hash manifest
 and a rollback snapshot on the server. GitHub and the live files are verified

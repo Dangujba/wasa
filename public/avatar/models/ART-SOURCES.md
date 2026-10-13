@@ -62,11 +62,12 @@ bone motion, not motion capture or physical cloth simulation. Facial animation
 remains a future refinement.
 
 Both assets pass Khronos glTF Validator with zero errors, warnings and infos.
-Run `node --test tests/*.test.cjs` for the 19 checks covering all nine outfits,
+Run `node --test tests/*.test.cjs` for the 20 checks covering all nine outfits,
 geometry, normalized skin weights, continuous loops, articulation, transitions,
 world-scale floor tolerance, scarves/hair/accessories, texture/material selection,
 loading/disposal races, resource counts, city geometry and controller directions,
-slope/curb sole contact, flyover access, acceleration/turn limits and motion settling.
+slope/curb sole contact, flyover access, acceleration/turn limits, motion settling,
+relaxed stance width, forward knee bending and level idle soles.
 CPU imports omit image decoding; browser checks cover actual maps and shaders.
 For temporary world visual QA use `?debug=1&body=feminine&outfit=abaya` (or a valid
 male outfit). These query selections do not write account appearance records.

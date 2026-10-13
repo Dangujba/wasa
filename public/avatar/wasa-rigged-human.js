@@ -1,4 +1,4 @@
-/* WASA Human v3.1: male/female skinned GLB wardrobe, shared clips and materials. */
+/* WASA Human v3.3: skinned wardrobe with a relaxed stance, shared clips and materials. */
 (() => {
  'use strict';
  const B=window.BABYLON,procedural=window.WasaHuman;
@@ -18,7 +18,7 @@
    if(!templates.has(scene))templates.set(scene,new Map());
    const pendingForScene=templates.get(scene);
    if(pendingForScene.has(body))return pendingForScene.get(body);
-   const assetURL='/avatar/models/'+assets[body].file+'?v=1.1.0';
+   const assetURL='/avatar/models/'+assets[body].file+'?v=1.2.0';
    const pending=B.SceneLoader.LoadAssetContainerAsync('',assetURL,scene,undefined,'.glb').then(container=>{
      if(scene.isDisposed){container.dispose();return null;}
      if(!resolvedTemplates.has(scene))resolvedTemplates.set(scene,new Map());
@@ -192,5 +192,5 @@
    result.ready=cached?Promise.resolve(instantiate(cached)):preload(scene,body).then(instantiate);
    return result;
  }
- window.WasaHuman={create,preload,eligible,version:'3.2.0-motion',proceduralVersion:procedural.version};
+ window.WasaHuman={create,preload,eligible,version:'3.3.0-gait',proceduralVersion:procedural.version};
 })();

@@ -233,3 +233,30 @@ test('head and garment joints respond smoothly, remain bounded and settle after 
    }
  }finally{f.dispose();}
 });
+
+test('idle and moving feet stay beneath the hips without outward knee splay',async()=>{
+ const f=fixture();
+ try{
+   const looks=[...bundles.masculine.manifest.outfits.map(outfit=>({...cfg,outfit})),
+     ...bundles.feminine.manifest.outfits.map(outfit=>({...cfg,body:'feminine',outfit,headwear:'hijab',hair:'braids'}))];
+   for(const look of looks){
+     const actor=f.human.create(f.scene,look,{detail:'medium'});await actor.ready;
+     actor.root.scaling.setAll((look.body==='feminine'?1.72:1.82)/actor.getProfile().height);
+     const point=name=>{const n=actor.rig.bones.find(b=>b.name===name).getTransformNode();n.computeWorldMatrix(true);return n.getAbsolutePosition();};
+     for(let i=0;i<60;i++)actor.animate(1/60,0,false);
+     for(const side of ['L','R']){
+       const foot=actor.rig.bones.find(b=>b.name==='foot.'+side).getTransformNode();foot.computeWorldMatrix(true);
+       const up=B.Vector3.TransformNormal(B.Vector3.Up(),foot.getWorldMatrix()).normalize();
+       assert.ok(up.y>.995,'Idle shoe rests flat instead of leaning onto its inside edge');
+     }
+     for(const supported of [false,true])for(const run of [false,true])for(let i=0;i<90;i++){
+       actor.root.position.z-=(run?6.7:3.1)/60;
+       actor.animate(1/60,1,run,{speed:run?6.7:3.1,...(supported?{sampleGround:()=>({height:0,normal:B.Vector3.Up(),name:'flat'})}:{})});
+       const hips=Math.abs(point('upperleg01.L').x-point('upperleg01.R').x),feet=Math.abs(point('foot.L').x-point('foot.R').x),knees=Math.abs(point('lowerleg01.L').x-point('lowerleg01.R').x);
+       assert.ok(feet>.10&&feet<hips*1.30,'Feet remain beneath the hips: '+JSON.stringify({outfit:look.outfit,supported,run,feet,hips}));
+       assert.ok(knees<hips*1.25,'Knees bend forward without flaring out: '+JSON.stringify({outfit:look.outfit,supported,run,knees,hips}));
+     }
+     actor.dispose();
+   }
+ }finally{f.dispose();}
+});
