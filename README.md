@@ -34,7 +34,8 @@ The current API is configured for a local PostgreSQL socket and the database rol
 - Illustrative commercial storefronts, homes, flyover, filling stations and university-area scenery.
 - Third-person walking, mini-map, camera controls, avatar studio and account API.
 - Walkable flyover ramps and curbs, runtime foot placement, smooth acceleration/turns, and damped head/garment motion.
-- Citywide multiplayer, skill matchmaking, production-quality vehicle racing and architectural fidelity are future work.
+- Shared city exploration and server-controlled on-foot sprint races.
+- Larger tested server capacity, skill matchmaking, vehicle racing and architectural fidelity are future work.
 
 The building models and bridge structure are game-art approximations, not surveyed architecture. Businesses without verified location information are not pinned to invented addresses.
 
@@ -55,4 +56,4 @@ Repository owner: Dangujba.
 
 ## Multiplayer alpha
 
-The Challenges menu now opens `/multiplayer/`: authenticated real-time players, FIFO matchmaking, private invitation rooms and a 160 m server-controlled sprint. Public matches support authenticated spectators; results and a simple points leaderboard persist in PostgreSQL. The geographic exploration world remains local. See [MULTIPLAYER.md](MULTIPLAYER.md) for rules, isolated tests and backend release/recovery, and [the revised roadmap](WASA_REMAINING_WORK_ROADMAP.md) for remaining gates. Phone and load testing remain pending.
+The Challenges menu now opens `/multiplayer/`: authenticated real-time players, FIFO matchmaking, private invitation rooms and a 160 m server-controlled sprint. Public matches support authenticated spectators; results and a simple points leaderboard persist in PostgreSQL. Signed-in players now explore the geographic city together with visible nearby avatars and live presence. Guests have a solo preview. See [MULTIPLAYER.md](MULTIPLAYER.md) for rules, isolated tests and backend release/recovery, and [the revised roadmap](WASA_REMAINING_WORK_ROADMAP.md) for remaining gates. Phone and load testing remain pending.

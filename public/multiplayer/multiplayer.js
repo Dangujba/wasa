@@ -45,6 +45,7 @@
      if (m.v !== R.VERSION) { stopped = true; notice('The game was updated. Refresh this page.'); ws.close(); return; }
      if (m.type === 'welcome') {
        handshaken=true; connection('ONLINE',true); notice(''); self = m.self; queued = m.queued; seq = m.room?.players.find(p => p.id === self.id)?.ack || 0;
+       if(m.city)send({type:'leave'});
        pending = []; predicted = null; if (m.room) applySnapshot(m.room, m.room.players.some(p => p.id === self.id)?'player':'spectator');
        else showLobby(); updateActions();
      } else if (m.type === 'snapshot') applySnapshot(m.room,m.role);

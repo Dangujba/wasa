@@ -1,17 +1,18 @@
 """Package a clean, tested Git commit, with drift checks against the live baseline."""
 from pathlib import Path
-import hashlib, io, json, subprocess, tarfile, uuid
+import hashlib, io, json, subprocess, tarfile, uuid, sys, re
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '37a2dc167936d586a1fb3448035571cdc9d9d7c5'
+BASE = sys.argv[1] if len(sys.argv)>1 else '37a2dc167936d586a1fb3448035571cdc9d9d7c5'
+assert re.fullmatch(r'[a-f0-9]{40}',BASE), 'Pass the exact deployed base commit'
 def git(*args):
     return subprocess.check_output(['git', *args], cwd=ROOT)
 if git('status', '--porcelain').strip():
     raise ValueError('Commit the tested source before packaging')
 commit = git('rev-parse', 'HEAD').decode().strip()
-paths = git('diff', '--name-only', BASE, commit).decode().splitlines()
-allowed_api = {'api/server.mjs', 'api/multiplayer.mjs', 'api/race-store.mjs',
+paths = sorted(set(git('diff', '--name-only', BASE, commit).decode().splitlines()) | {'api/package.json','api/package-lock.json','api/multiplayer-migration.sql'})
+allowed_api = {'api/server.mjs', 'api/multiplayer.mjs', 'api/city.mjs', 'api/race-store.mjs',
                'api/multiplayer-migration.sql', 'api/package.json', 'api/package-lock.json'}
 def permitted(p):
     return p.startswith(('public/', 'tests/', 'tools/', '.github/workflows/')) or p in allowed_api or p in {

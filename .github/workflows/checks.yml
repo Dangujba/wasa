@@ -37,4 +37,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f api/avatar-migration.sql
           psql -v ON_ERROR_STOP=1 -f api/multiplayer-migration.sql
           for file in api/*.mjs public/multiplayer/*.js public/shared/*.js; do node --check "$file"; done
+          node tools/build-city-physics.cjs
+          git diff --exit-code public/world/data/city-physics-v1.json
           node --test tests/*.test.cjs

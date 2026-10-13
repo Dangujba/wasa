@@ -1,7 +1,7 @@
 /* Run only against a freshly provisioned, isolated PostgreSQL database. */
 const test = require('node:test'), assert = require('node:assert/strict');
 const {createRequire} = require('node:module'), {resolve} = require('node:path');
-const {randomBytes,randomUUID} = require('node:crypto');
+const {randomBytes,randomUUID,createHash} = require('node:crypto');
 const requireApi = createRequire(resolve(__dirname,'../api/package.json'));
 const pg = requireApi('pg'), {WebSocket} = requireApi('ws');
 const database = process.env.WASA_TEST_DATABASE;
@@ -55,6 +55,27 @@ test('real PostgreSQL accounts, authenticated sockets, race, reconnect, spectato
     assert.equal((await pool.query('SELECT COUNT(*)::int AS n FROM race_results')).rows[0].n,1);
     assert.equal((await pool.query('SELECT COUNT(*)::int AS n FROM race_participants')).rows[0].n,2);
     send(wa,'rematch');await until(()=>lastRoom(wa)?.phase==='waiting');
+    for(const ws of [wa,wb,viewer])send(ws,'leave');
+    const cityData=require('../public/world/data/city-physics-v1.json');
+    for(const ws of [wa,wb,viewer])send(ws,'explore',{revision:cityData.revision});
+    const cityState=ws=>ws.messages.filter(m=>m.type==='city_snapshot').at(-1);
+    await until(()=>cityState(wa)?.online===3&&cityState(wb)?.online===3);
+    const guests=[];
+    for(let i=0;i<13;i++){
+      const id=randomUUID(),token=randomBytes(32).toString('hex'),name='CityMember'+i;
+      await pool.query('INSERT INTO users(id,email,username,username_key,password_hash) VALUES($1,$2,$3,$4,$5)',[id,name.toLowerCase()+'@example.invalid',name,name.toLowerCase(),'test-fixture-login-disabled']);
+      await pool.query('INSERT INTO player_profiles(user_id,display_name) VALUES($1,$2)',[id,name]);
+      await pool.query("INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 hour')",[id,createHash('sha256').update(token).digest('hex')]);
+      const ws=await socket({cookie:'wasa_dev_session='+token});guests.push(ws);send(ws,'explore',{revision:cityData.revision});
+    }
+    await until(()=>cityState(wa)?.online===16);assert.ok(cityState(wa).players.length<=24);
+    const beforeCity=cityState(wa).self.state.x;let citySeq=cityState(wa).self.ack;
+    const cityTimer=setInterval(()=>send(wa,'world_input',{seq:++citySeq,x:1,z:0,run:true}),34);
+    try{await until(()=>cityState(wb)?.players.find(p=>p.id===a.user.id)?.state.x>beforeCity+.5);}finally{clearInterval(cityTimer);}
+    assert.equal(JSON.stringify(cityState(viewer)).includes('@example.invalid'),false);
+    send(wa,'city_travel',{target:'ysu'});await until(()=>cityState(wa)?.self.state.z>6000);
+    await until(()=>!cityState(wb).players.some(p=>p.id===a.user.id));
+    for(const ws of guests){send(ws,'leave');ws.close();}
     const logout=await request('POST','/api/logout',{},b.cookie);assert.equal(logout.statusCode,200);
     await until(()=>wb.readyState!==1);assert.equal((await request('GET','/api/me',null,b.cookie)).json().authenticated,false);
     const deletion=await request('POST','/api/delete-account',{password},a.cookie);assert.equal(deletion.statusCode,200);

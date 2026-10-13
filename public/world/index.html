@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111d1f">
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Explore a connected 3D Damaturu district based on mapped roads and illustrative buildings.">
+<meta name="description" content="Explore Damaturu together with other signed-in players on mapped roads and illustrative buildings.">
 <title>WASA · Damaturu</title>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/world/world.css?v=1.0.0">
+<link rel="stylesheet" href="/world/world.css?v=1.1.0">
 <script src="/vendor/babylon.min.js" defer></script>
 <script src="/vendor/babylonjs.loaders.min.js?v=8.26.0" defer></script>
 <script src="/rendering/wasa-rendering.js?v=1.0.1" defer></script>
@@ -18,7 +18,9 @@
 <script src="/shared/movement.js?v=1.0.0" defer></script>
 <script src="/world/wasa-locomotion.js?v=1.1.0" defer></script>
 <script src="/world/street-block.js?v=1.0.1" defer></script>
-<script src="/world/world.js?v=1.7.0" defer></script>
+<script src="/shared/city-simulation.js?v=1.0.0" defer></script>
+<script src="/world/city-client.js?v=1.0.1" defer></script>
+<script src="/world/world.js?v=1.8.0" defer></script>
 </head>
 <body>
 <div class="game-shell">
@@ -45,6 +47,7 @@
   <div class="boot-footnote">DAMATURU · YSU CORRIDOR</div>
  </div>
  <div id="game-ui" class="game-ui" hidden>
+  <div class="city-presence" aria-label="City connection"><strong id="city-online">DAMATURU</strong><span id="city-status" role="status">CONNECTING</span><a id="city-signin" href="/?auth=login" hidden>SIGN IN FOR SHARED CITY ↗</a><button id="city-respawn" type="button">RETURN TO ARRIVAL</button></div>
   <header class="hud-top" aria-label="Game controls">
    <a class="wasa-mark" href="/" title="WASA main menu" aria-label="WASA main menu">W<span>.</span></a>
    <div class="hud-top-actions">
@@ -111,7 +114,7 @@
    <div class="help-row"><span>WHEEL / PINCH</span><strong>ZOOM</strong></div>
    <div class="help-row"><span>E / F</span><strong>INTERACT</strong></div>
    <p>Mapped road lines and building outlines are sourced from © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). The flyover geometry, shops, heights, signs and scenery are illustrative, not surveyed representations.</p>
-   <p>This remains an exploration preview. Driving, racing and multiplayer will be added separately.</p>
+   <p>Sign in to explore the city with other players in real time. Nearby explorers appear with their saved characters. Sprint challenges are available from Challenges in the main menu.</p>
    <button id="help-close-primary" type="button" class="help-confirm">CONTINUE</button>
   </section>
  </div>

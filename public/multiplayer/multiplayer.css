@@ -1,6 +1,168 @@
+@font-face{font-family:"Barlow Condensed";src:url("/assets/fonts/barlow-condensed-900.woff2") format("woff2");font-weight:900;font-display:swap}
 
-:root{color-scheme:dark;--bg:#0c2221;--ink:#edf1de;--muted:#9bb3a6;--mint:#9ad3ad;--gold:#dfb877;--border:#ffffff19}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Arial,sans-serif}button,a,input,select{-webkit-tap-highlight-color:transparent}button,input,select{font:inherit}button,a{touch-action:manipulation}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:4px}[hidden]{display:none!important}.topbar{height:88px;display:flex;align-items:center;gap:24px;padding:0 5vw;border-bottom:1px solid var(--border)}.brand{font-size:36px;font-weight:900;letter-spacing:-5px}.brand span,h1 span{color:var(--gold)}.top-title{font-size:13px;font-weight:750;letter-spacing:1.8px}.top-title small{display:block;font-size:9px;color:var(--muted);margin-top:3px}.connection{margin-left:auto;font-size:10px;letter-spacing:1px;color:var(--muted)}.connection.connected{color:var(--mint)}.menu-link{font-size:11px;letter-spacing:1px}.lobby{max-width:1440px;margin:auto;padding:62px 5vw 40px;display:grid;grid-template-columns:1fr 1.3fr;gap:8vw}.intro{padding-top:40px}.eyebrow{color:var(--gold);font-size:10px;font-weight:750;letter-spacing:1.8px}h1{font-size:clamp(54px,6vw,94px);line-height:1.02;letter-spacing:-4px;margin:24px 0 28px;font-weight:750}.intro p{font-size:17px;color:var(--muted);line-height:1.8}.explore{display:inline-block;margin-top:45px;color:var(--mint);font-size:11px;letter-spacing:1px;border-bottom:1px solid #9ad3ad66;padding-bottom:9px}.identity{display:flex;align-items:center;gap:13px;padding-bottom:24px}.initial{width:42px;height:42px;background:#294c40;border:1px solid #88ab8366;display:grid;place-items:center;font-weight:900;font-size:24px;border-radius:9px}.identity strong{font-size:13px;letter-spacing:.6px}.identity small{display:block;font-size:10px;color:var(--muted)}.online-count{margin-left:auto;font-size:10px;color:var(--mint);letter-spacing:1px}.course-card{border:1px solid var(--border);background:#ffffff03;border-radius:12px;overflow:hidden}.course-visual{height:148px;background:radial-gradient(ellipse at 70% -60%,#af986944,transparent 80%),#173c35;position:relative;overflow:hidden}.lane{position:absolute;top:-100px;left:21%;height:350px;width:40px;border-left:1px solid #98c39455;border-right:1px solid #98c39422;transform:rotate(40deg)}.lane:nth-child(2){left:37%;border-right:3px dashed #dfb87777}.course-visual i{position:absolute;right:28px;top:5px;font:italic 90px/1.4 Georgia,serif;color:#bed4ac}.course-visual b{position:absolute;right:29px;bottom:18px;font-size:9px;letter-spacing:2px;color:#b7d1b9}.course-description{padding:22px 25px}.course-description h2{font-size:23px;letter-spacing:-.6px;margin:6px 0}.course-description p{font-size:12px;color:var(--muted);margin:0 0 12px}.course-description small{font-size:10px;color:#718f80}.match-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.primary,.secondary{padding:13px 18px;display:inline-flex;align-items:center;justify-content:center;gap:16px;border-radius:7px;font-size:10px;letter-spacing:1px;font-weight:800;min-height:44px}.primary{background:var(--mint);color:#112b24;border:1px solid var(--mint)}.primary span{margin-left:auto}.secondary{color:var(--ink);border:1px solid #a1c3af40;background:#173830b8}.join-form{grid-column:span 2;padding-top:9px}.join-form label{font-size:9px;letter-spacing:1px;color:var(--muted)}.join-form>div{display:flex;gap:12px;margin-top:7px}.join-form input{flex:1;min-width:0;border:1px solid var(--border);background:#071b1a;color:var(--ink);border-radius:7px;padding:12px 14px;font-size:12px;text-transform:uppercase}.queue-card{display:flex;gap:15px;align-items:center;border:1px solid #9ad3ad44;border-radius:8px;background:#163e30;padding:20px;margin-top:18px}.queue-card strong{font-size:13px}.queue-card small{display:block;color:var(--muted);font-size:11px}.pulse{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px #9ad3ad18}.text-button{margin-left:auto;background:none;border:0;color:var(--mint);font-size:10px;letter-spacing:1px}.notice{font-size:12px;min-height:18px;color:var(--gold);margin:12px 0}.tabs{display:flex;border-bottom:1px solid var(--border);gap:24px}.tabs button{color:var(--muted);background:none;border:0;font-size:10px;letter-spacing:1px;padding:14px 0;border-bottom:2px solid transparent}.tabs button.active{color:var(--ink);border-bottom-color:var(--gold)}.listing{min-height:94px;padding:9px 0}.empty{font-size:12px;color:var(--muted);margin:22px 0}.listing-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}.listing-row strong{font-size:12px}.listing-row small{display:block;color:var(--muted);font-size:10px}.listing-row button,.listing-row .points{margin-left:auto}.rank{color:var(--gold);font-size:15px;min-width:22px}.points{font-size:13px;color:var(--mint)}.alpha-note{font-size:10px;color:#729485;line-height:1.7}.signin{padding:18px 0 24px}.signin p{font-size:13px;color:var(--muted)}.arena{position:relative;height:calc(100dvh - 88px);min-height:480px;overflow:hidden}#race-canvas{display:block;width:100%;height:100%;touch-action:none;outline:0}.scene-loading{position:absolute;inset:0;background:#0c2221;display:grid;place-items:center;z-index:8;font-size:12px;letter-spacing:2px}.arena-top{position:absolute;top:24px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:start;gap:20px}.arena-label{border-left:3px solid var(--gold);padding:3px 16px;text-shadow:0 2px 10px #000}.arena-label strong{display:block;font-size:16px;letter-spacing:1px}.arena-label small{color:var(--mint);font-size:11px}.race-score{position:absolute;top:116px;left:28px;display:flex;gap:10px}.player-score{width:180px;background:#0c2925dd;border:1px solid #92c4a52b;border-radius:8px;padding:12px 16px}.player-score strong{font-size:12px}.player-score small{display:block;color:var(--muted);font-size:10px}.progress-track{height:3px;background:#ffffff22;margin-top:10px}.progress-track span{display:block;height:100%;background:var(--mint)}.countdown{position:absolute;top:32%;left:50%;transform:translateX(-50%);font-size:110px;font-weight:800;color:var(--ink);text-shadow:0 6px 30px #0008;pointer-events:none}.arena-bottom{position:absolute;bottom:25px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:center;gap:14px}.player-controls{display:flex;gap:10px;align-items:center}.player-controls>span{font-size:9px;color:#fff;text-shadow:0 2px 3px #000}#race-clock{font-size:32px;font-weight:650;font-variant-numeric:tabular-nums;color:white;text-shadow:0 3px 8px #0008}#spectator-controls label{font-size:10px;margin-right:10px;letter-spacing:1px}select{background:#12352b;border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:7px}.result-card{position:absolute;top:27%;left:50%;transform:translateX(-50%);width:360px;max-width:90%;padding:30px;background:#102d29f5;border:1px solid #c9b37a66;border-radius:12px;text-align:center;box-shadow:0 20px 100px #0006}.result-card h2{font-size:30px;margin:10px 0}.result-card p{font-size:12px;color:var(--muted)}.result-card small{display:block;font-size:11px;color:var(--gold);margin-bottom:20px}.result-card .primary{width:100%}.touch-controls{display:none;position:absolute;left:20px;right:20px;bottom:90px;align-items:end;justify-content:space-between;pointer-events:none}#race-joystick{width:110px;height:110px;border-radius:50%;border:2px solid #a4cfb977;background:#103d3380;position:relative;pointer-events:auto;touch-action:none}#race-thumb{position:absolute;width:46px;height:46px;top:30px;left:30px;background:#82b79c;border:2px solid #bce6c4;border-radius:50%}.sprint{pointer-events:auto;width:75px;height:75px;border-radius:50%;border:2px solid #c3d6a2;background:#4c685ccc;color:white;font-size:10px;font-weight:800;touch-action:none}@media(pointer:coarse){.touch-controls{display:flex}.player-controls>span{display:none}}@media(max-width:800px){.topbar{height:70px;padding:0 20px;gap:14px}.top-title{font-size:11px}.top-title small{font-size:8px}.menu-link{font-size:9px}.connection{font-size:8px}.lobby{display:block;padding:28px 24px}.intro{padding:0 0 30px}.intro h1{font-size:52px;letter-spacing:-2px;margin:12px 0 15px}.intro p{font-size:13px;margin:0}.explore{margin-top:18px}.eyebrow{font-size:9px}.arena{height:calc(100dvh - 70px)}.arena-top{top:16px;left:16px;right:16px}.arena-label{padding-left:9px}.arena-label strong{font-size:12px}.arena-label .eyebrow{font-size:8px}.arena-top .secondary{font-size:8px;padding:8px 10px;min-height:34px}.race-score{top:96px;left:16px;right:16px;gap:8px}.player-score{width:50%;padding:9px 11px}.player-score strong{font-size:11px}.arena-bottom{bottom:18px;left:16px;right:16px}.player-controls .primary,.player-controls .secondary{font-size:8px;padding:10px}.player-controls>span{display:none}#race-clock{font-size:24px}.result-card{top:29%}.tabs{gap:21px}.course-visual{height:125px}.course-visual i{font-size:76px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+@font-face{font-family:"DM Sans";src:url("/assets/fonts/dm-sans-600.woff2") format("woff2");font-weight:600;font-display:swap}
+
+
+:root{color-scheme:dark;--bg:#07171b;--ink:#f1f3e8;--muted:#97b2ae;--mint:#91e4c7;--gold:#edbd77;--border:#ffffff19}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:600 14px/1.5 "DM Sans",system-ui,sans-serif}
+button,a,input,select{-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit}
+button,a{touch-action:manipulation}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+[hidden]{display:none!important}
+.topbar{height:88px;display:flex;align-items:center;gap:24px;padding:0 5vw;border-bottom:1px solid var(--border)}
+.brand{font-size:36px;font-weight:900;letter-spacing:-5px}
+.brand span,h1 span{color:var(--gold)}
+.top-title{font-size:13px;font-weight:750;letter-spacing:1.8px}
+.top-title small{display:block;font-size:9px;color:var(--muted);margin-top:3px}
+.connection{margin-left:auto;font-size:10px;letter-spacing:1px;color:var(--muted)}
+.connection.connected{color:var(--mint)}
+.menu-link{font-size:11px;letter-spacing:1px}
+.lobby{max-width:1440px;margin:auto;padding:62px 5vw 40px;display:grid;grid-template-columns:1fr 1.3fr;gap:8vw}
+.intro{padding-top:40px}
+.eyebrow{color:var(--gold);font-size:10px;font-weight:750;letter-spacing:1.8px}
+h1{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(76px,8vw,124px);line-height:.82;letter-spacing:.01em;text-transform:uppercase;margin:24px 0 28px;font-weight:900}
+.intro p{font-size:17px;color:var(--muted);line-height:1.8}
+.explore{display:inline-block;margin-top:45px;color:var(--mint);font-size:11px;letter-spacing:1px;border-bottom:1px solid #91e4c766;padding-bottom:9px}
+.identity{display:flex;align-items:center;gap:13px;padding-bottom:24px}
+.initial{width:42px;height:42px;background:#15383b;border:1px solid #88ab8366;display:grid;place-items:center;font-weight:900;font-size:24px;border-radius:0}
+.identity strong{font-size:13px;letter-spacing:.6px}
+.identity small{display:block;font-size:10px;color:var(--muted)}
+.online-count{margin-left:auto;font-size:10px;color:var(--mint);letter-spacing:1px}
+.course-card{border:1px solid var(--border);background:#ffffff03;border-radius:0;overflow:hidden}
+.course-visual{height:148px;background:radial-gradient(ellipse at 70% -60%,#af986944,transparent 80%),#15383b;position:relative;overflow:hidden}
+.lane{position:absolute;top:-100px;left:21%;height:350px;width:40px;border-left:1px solid #98c39455;border-right:1px solid #98c39422;transform:rotate(40deg)}
+.lane:nth-child(2){left:37%;border-right:3px dashed #edbd7777}
+.course-visual i{position:absolute;right:28px;top:5px;font:900 104px/1.4 "Barlow Condensed",Impact,sans-serif;color:#bed4ac}
+.course-visual b{position:absolute;right:29px;bottom:18px;font-size:9px;letter-spacing:2px;color:#b7d1b9}
+.course-description{padding:22px 25px}
+.course-description h2{font-size:23px;letter-spacing:-.6px;margin:6px 0}
+.course-description p{font-size:12px;color:var(--muted);margin:0 0 12px}
+.course-description small{font-size:10px;color:#718f80}
+.match-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.primary,.secondary{padding:13px 18px;display:inline-flex;align-items:center;justify-content:center;gap:16px;border-radius:0;font-size:10px;letter-spacing:1px;font-weight:800;min-height:44px}
+.primary{background:var(--mint);color:#112b24;border:1px solid var(--mint)}
+.primary span{margin-left:auto}
+.secondary{color:var(--ink);border:1px solid #a1c3af40;background:#12373bb8}
+.join-form{grid-column:span 2;padding-top:9px}
+.join-form label{font-size:9px;letter-spacing:1px;color:var(--muted)}
+.join-form>div{display:flex;gap:12px;margin-top:7px}
+.join-form input{flex:1;min-width:0;border:1px solid var(--border);background:#04161d;color:var(--ink);border-radius:0;padding:12px 14px;font-size:12px;text-transform:uppercase}
+.queue-card{display:flex;gap:15px;align-items:center;border:1px solid #91e4c744;border-radius:0;background:#163e30;padding:20px;margin-top:18px}
+.queue-card strong{font-size:13px}
+.queue-card small{display:block;color:var(--muted);font-size:11px}
+.pulse{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px #91e4c718}
+.text-button{margin-left:auto;background:none;border:0;color:var(--mint);font-size:10px;letter-spacing:1px}
+.notice{font-size:12px;min-height:18px;color:var(--gold);margin:12px 0}
+.tabs{display:flex;border-bottom:1px solid var(--border);gap:24px}
+.tabs button{color:var(--muted);background:none;border:0;font-size:10px;letter-spacing:1px;padding:14px 0;border-bottom:2px solid transparent}
+.tabs button.active{color:var(--ink);border-bottom-color:var(--gold)}
+.listing{min-height:94px;padding:9px 0}
+.empty{font-size:12px;color:var(--muted);margin:22px 0}
+.listing-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+.listing-row strong{font-size:12px}
+.listing-row small{display:block;color:var(--muted);font-size:10px}
+.listing-row button,.listing-row .points{margin-left:auto}
+.rank{color:var(--gold);font-size:15px;min-width:22px}
+.points{font-size:13px;color:var(--mint)}
+.alpha-note{font-size:10px;color:#729485;line-height:1.7}
+.signin{padding:18px 0 24px}
+.signin p{font-size:13px;color:var(--muted)}
+.arena{position:relative;height:calc(100dvh - 88px);min-height:480px;overflow:hidden}
+#race-canvas{display:block;width:100%;height:100%;touch-action:none;outline:0}
+.scene-loading{position:absolute;inset:0;background:#07171b;display:grid;place-items:center;z-index:8;font-size:12px;letter-spacing:2px}
+.arena-top{position:absolute;top:24px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:start;gap:20px}
+.arena-label{border-left:3px solid var(--gold);padding:3px 16px;text-shadow:0 2px 10px #000}
+.arena-label strong{display:block;font-size:16px;letter-spacing:1px}
+.arena-label small{color:var(--mint);font-size:11px}
+.race-score{position:absolute;top:116px;left:28px;display:flex;gap:10px}
+.player-score{width:180px;background:#0c2925dd;border:1px solid #92c4a52b;border-radius:0;padding:12px 16px}
+.player-score strong{font-size:12px}
+.player-score small{display:block;color:var(--muted);font-size:10px}
+.progress-track{height:3px;background:#ffffff22;margin-top:10px}
+.progress-track span{display:block;height:100%;background:var(--mint)}
+.countdown{position:absolute;top:32%;left:50%;transform:translateX(-50%);font-size:110px;font-weight:800;color:var(--ink);text-shadow:0 6px 30px #0008;pointer-events:none}
+.arena-bottom{position:absolute;bottom:25px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.player-controls{display:flex;gap:10px;align-items:center}
+.player-controls>span{font-size:9px;color:#fff;text-shadow:0 2px 3px #000}
+#race-clock{font-size:32px;font-weight:650;font-variant-numeric:tabular-nums;color:white;text-shadow:0 3px 8px #0008}
+#spectator-controls label{font-size:10px;margin-right:10px;letter-spacing:1px}
+select{background:#123036;border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:0}
+.result-card{position:absolute;top:27%;left:50%;transform:translateX(-50%);width:360px;max-width:90%;padding:30px;background:#0c2428f5;border:1px solid #c9b37a66;border-radius:0;text-align:center;box-shadow:0 20px 100px #0006}
+.result-card h2{font-size:30px;margin:10px 0}
+.result-card p{font-size:12px;color:var(--muted)}
+.result-card small{display:block;font-size:11px;color:var(--gold);margin-bottom:20px}
+.result-card .primary{width:100%}
+.touch-controls{display:none;position:absolute;left:20px;right:20px;bottom:90px;align-items:end;justify-content:space-between;pointer-events:none}
+#race-joystick{width:110px;height:110px;border-radius:50%;border:2px solid #a4cfb977;background:#103d3380;position:relative;pointer-events:auto;touch-action:none}
+#race-thumb{position:absolute;width:46px;height:46px;top:30px;left:30px;background:#82b79c;border:2px solid #bce6c4;border-radius:50%}
+.sprint{pointer-events:auto;width:75px;height:75px;border-radius:0;border:2px solid #c3d6a2;background:#4c685ccc;color:white;font-size:10px;font-weight:800;touch-action:none}
+@media(pointer:coarse){.touch-controls{display:flex}
+.player-controls>span{display:none}
+}
+@media(max-width:800px){.topbar{height:70px;padding:0 20px;gap:14px}
+.top-title{font-size:11px}
+.top-title small{font-size:8px}
+.menu-link{font-size:9px}
+.connection{font-size:8px}
+.lobby{display:block;padding:28px 24px}
+.intro{padding:0 0 30px}
+.intro h1{font-size:72px;letter-spacing:.01em;margin:12px 0 15px}
+.intro p{font-size:13px;margin:0}
+.explore{margin-top:18px}
+.eyebrow{font-size:9px}
+.arena{height:calc(100dvh - 70px)}
+.arena-top{top:16px;left:16px;right:16px}
+.arena-label{padding-left:9px}
+.arena-label strong{font-size:12px}
+.arena-label .eyebrow{font-size:8px}
+.arena-top .secondary{font-size:8px;padding:8px 10px;min-height:34px}
+.race-score{top:96px;left:16px;right:16px;gap:8px}
+.player-score{width:50%;padding:9px 11px}
+.player-score strong{font-size:11px}
+.arena-bottom{bottom:18px;left:16px;right:16px}
+.player-controls .primary,.player-controls .secondary{font-size:8px;padding:10px}
+.player-controls>span{display:none}
+#race-clock{font-size:24px}
+.result-card{top:29%}
+.tabs{gap:21px}
+.course-visual{height:125px}
+.course-visual i{font-size:76px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}
+}
+
 
 .arena-notice{position:absolute;top:190px;left:28px;right:28px;font-size:12px;color:#ffe4ad;text-shadow:0 2px 6px #000;pointer-events:none}
 
+
 .race-rules{font-size:11px;color:var(--muted);line-height:1.7;margin:15px 2px}
+
+
+body{background:radial-gradient(ellipse at 45% 30%,#19434655,transparent 65%),#07171b}
+.brand{display:flex;align-items:center;gap:11px;font-family:"Barlow Condensed",Impact,sans-serif;letter-spacing:.03em;font-size:34px}
+.brand .wasa-icon{display:grid;place-items:center;width:41px;height:41px;border:1px solid #dbeddb70;clip-path:polygon(0 0,100% 0,100% 84%,80% 100%,0 100%);font-size:29px;color:var(--ink)}
+.brand .brand-word span{color:var(--gold)}
+h1 em{font-style:normal;color:var(--mint)}
+.lobby-content{border-left:1px solid var(--border);padding-left:36px}
+.course-description h2,.result-card h2{font-family:"Barlow Condensed",Impact,sans-serif;font-weight:900;font-size:36px;letter-spacing:.03em;text-transform:uppercase}
+.primary,.secondary{font-size:11px;letter-spacing:.12em}
+.primary{background:linear-gradient(110deg,#b4e3c7,#75bead);border-color:#c6f2da;min-height:47px}
+.primary:hover{background:linear-gradient(100deg,#def3d4,#8ed5c1)}
+.secondary:hover{background:#2b5b50}
+.explore{border:1px solid #d7eadd64;background:#12373b91;padding:12px 20px;color:#f7eddd;letter-spacing:.12em}
+.course-card{background:#0c2428;border-color:#bed8cb23}
+.topbar{border-color:#bed8cb23}
+.course-description small{color:#97b2ae}
+@media(max-width:800px){.lobby-content{border-left:0;padding-left:0}
+.brand{font-size:26px}
+.brand .wasa-icon{width:32px;height:32px;font-size:25px}
+.top-title small{display:none}
+}
+
+
+.brand>.brand-word{color:var(--ink)}

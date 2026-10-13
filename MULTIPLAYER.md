@@ -6,8 +6,7 @@ Private Room gives an eight-character invitation code. Both players select
 Ready. Arrows/WASD move, Shift sprints, and drag rotates the camera. Four ordered
 gates lead to the finish. A public race can be watched by authenticated viewers.
 
-This is a compact illustrative arena inspired by Damaturu streets. The larger
-OSM exploration world remains local. Vehicle modes, skill matchmaking, chat,
+This is a compact illustrative arena inspired by Damaturu streets. The larger OSM exploration world now supports shared signed-in exploration. Vehicle modes, skill matchmaking, chat,
 tournaments and real-money systems are future work. Phone testing is deferred.
 
 ## Gameplay and protocol
@@ -98,8 +97,7 @@ Production cookies remain `__Host-wasa_session`, Secure, HttpOnly, SameSite=Lax.
 For isolated loopback development only, `WASA_LOCAL_DEVELOPMENT=1` permits an
 HTTP loopback origin and separate `wasa_dev_session` cookie.
 
-`tools/package-multiplayer-release.py` packages a clean tested commit and checks
-the baseline `37a2dc1`. `tools/install-multiplayer-release.py` verifies SHA/path/
+`tools/package-multiplayer-release.py DEPLOYED_BASE_SHA` packages a clean tested commit and checks the exact deployed baseline. It includes locked API dependencies and the additive race migration for subsequent backend releases. `tools/install-multiplayer-release.py` verifies SHA/path/
 baseline file drift, backs up source, dependencies, Nginx and a verified account
 database dump, stages locked dependencies, stops the existing API, applies the
 additive migration, installs source, configures the exact WebSocket proxy and
@@ -120,3 +118,43 @@ Required checks/branch protection, staged recovery drills, concurrent-user and
 poor-network load targets, moderation/account recovery policies, operational
 alerts, admin result voiding, and actual Android tests when resumed. Follow
 `WASA_REMAINING_WORK_ROADMAP.md` for expansion after those gates.
+
+
+## Shared city and original interface
+
+The Play WASA / Explore Damaturu route now joins signed-in accounts to one shared
+city. Guests retain a clearly labelled solo preview. The existing square menu
+and Avatar Studio controls, Barlow Condensed headings, DM Sans text, mint/gold
+accents and blue-green panels also define the multiplayer interface. Ordinary
+buttons, inputs, cards and world panels have square corners; joystick rings
+remain circular movement controls.
+
+`tools/build-city-physics.cjs` captures actual walkable triangles and collision
+boxes from the same map, flyover, authored street and district builders used by
+the renderer. `public/world/data/city-physics-v1.json` holds the revisioned data.
+`public/shared/city-simulation.js` implements spatial surface/collision indexes
+and bounded movement shared by the server and city client. CI rebuilds the data
+and detects an uncommitted geometry change. Rerun the generator after changing
+city geometry. The current export has 47,188 flat road/pavement bands, 154 elevated/detail surface triangles and 1,581 colliders. Flat bands are stored compactly instead of repeating their triangles.
+
+The existing authenticated socket also accepts explore, world_input and
+city_travel. City membership excludes race-room/queue membership. Logging out
+or deleting an account closes the city session. Reconnecting within 15 seconds
+retains the exploration position. Travel accepts only three server-selected
+safe arrival points: street-block arrival, The Cross approach, and YSU approach.
+Raw positions, elapsed time and arbitrary teleport targets are rejected.
+
+The city has a defensive 64-connection cap. At 10 snapshots/s, each member sees
+up to 24 nearby peers within 180 m. The browser renders the closest 16 with their
+saved appearance, interpolated movement, elevation-aware feet and nameplates.
+Snapshot membership disappears on disconnect and returns on reconnect. Counts
+report connected explorers only. These caps are not claims of measured phone
+or public-beta capacity. Automated tests exercise 64 simulated explorers and
+16 authenticated real sockets on an isolated PostgreSQL database, including
+movement, travel, interest filtering, reconnection and session revocation.
+
+The city adds no database migration or permanent location history. Game-world
+positions and selected appearance are visible to nearby players. They contain
+no emails, password hashes or session tokens. Race behavior and stored results
+remain independently tested. Phone testing remains deferred; public load,
+long-duration stability and deliberate restoration exercises remain pending.

@@ -53,9 +53,9 @@ These components are **present according to the current repository**, although a
 
 ### Remaining beyond the first multiplayer milestone
 
-Implemented in this milestone: authenticated real-time players, FIFO matchmaking, private invitation rooms, one 160 m versioned sprint arena, server-controlled movement and timing, checkpoint validation, reconnects, rematches, authenticated read-only spectators, PostgreSQL results, and a simple points leaderboard. Larger multiplayer city exploration, vehicle racing, skill-based ranking, seasons, tournament operations and economy remain pending.
+Implemented in this milestone: authenticated real-time players, FIFO matchmaking, private invitation rooms, one 160 m versioned sprint arena, server-controlled movement and timing, checkpoint validation, reconnects, rematches, authenticated read-only spectators, PostgreSQL results, and a simple points leaderboard. Larger measured multiplayer capacity, vehicle racing, skill-based ranking, seasons, tournament operations and economy remain pending.
 
-The first course is an **illustrative standalone arena**, separate from the geographic exploration map. Expanding races onto mapped streets requires a shared collision/surface export and new route verification.
+The first race remains an **illustrative standalone arena**. Shared city exploration now uses collision/surface data exported from the actual mapped city and authored geometry. Moving races onto those streets still requires versioned route verification.
 
 ## 3. P0 — First playable multiplayer alpha
 
@@ -68,7 +68,7 @@ The first course is an **illustrative standalone arena**, separate from the geog
 - [x] Add reproducible start/finish/checkpoint positions in a versioned course data file, not scattered magic coordinates.
 - [x] Prevent course routes from crossing unsafe geometry: buildings, bridge piers, inaccessible levels and unwalkable drops.
 - [x] Add a **Return to Lobby / Respawn** action if the character becomes stuck.
-- [x] Standardize race coordinates, heading, floor height and player state in a shared pure simulation. Exploration and race acceleration/turn helpers are shared; the large exploration map is not networked.
+- [x] Standardize race coordinates, heading, floor height and player state in a shared pure simulation. Exploration and race acceleration/turn helpers are shared; the exploration map also uses the shared authoritative city simulation.
 
 **Acceptance:** A player can walk or sprint the complete chosen course repeatedly in desktop-browser tests without leaving the track or hitting an invisible barrier. Reset always recovers an invalid player position.
 
@@ -362,3 +362,5 @@ The core competitive loop is now covered by automated and desktop-browser eviden
 This revised repository copy preserves the original document in Downloads. Completed items describe the first desktop course only; unchecked broader requirements remain pending.
 
 **Maintenance rule:** Update this roadmap after each merged milestone. Use `[x]` only for independently verified features. Leave aspirations, placeholders and untested performance claims unchecked.
+
+The shared exploration milestone also uses the original square menu/Avatar Studio design. Server caps: 64 city members; snapshots include up to 24 nearby players; render budget is the closest 16. Verified with 64 simulated members and 16 authenticated sockets in an isolated database. Physical phone and public-beta performance remain pending.

@@ -3,6 +3,7 @@ import {randomUUID, randomBytes} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import {isIP} from 'node:net';
 import race from '../public/multiplayer/simulation.js';
+import {CityHub,CITY_CAPACITY} from './city.mjs';
 
 const ZERO = Object.freeze({x: 0, z: 0, run: false});
 const MAX_CONNECTIONS = 192, MAX_ROOMS = 48, MAX_SPECTATORS = 8, RECONNECT_MS = 15000;
@@ -11,6 +12,7 @@ export class RaceHub {
     this.store = store; this.clock = clock; this.log = log;
     this.clients = new Map(); this.rooms = new Map(); this.queue = []; this.tick = 0;
     this.lastStep = clock(); this.persistence = new Set();
+    this.city = new CityHub({send:(c,m)=>this.send(c,m),clock});
   }
   send(client, message) {
     const ws = client?.ws;
@@ -26,10 +28,11 @@ export class RaceHub {
     client.identity = identity; client.ws = ws; client.sessionHash = sessionHash; client.disconnectedAt = null;
     client.windowAt = this.clock(); client.messages = 0; client.commands = 0;
     this.clients.set(identity.id, client);
+    this.city.reconnect(client);
     const room = this.rooms.get(client.roomId), player = room?.players.find(p => p.id === identity.id);
     if (player) { player.connected = true; player.disconnectedAt = null; player.inputs = []; player.lastInput = ZERO; player.ack = player.lastReceived; }
     this.send(client, {type: 'welcome', self: identity, course: race.course, tick: this.tick,
-      room: room ? this.snapshot(room) : null, queued: client.queued});
+      room: room ? this.snapshot(room) : null, queued: client.queued, city:!!client.city});
     this.broadcast(room);
     return client;
   }
@@ -68,6 +71,7 @@ export class RaceHub {
     this.broadcast(room); this.send(c, {type: 'presence', queued: false});
   }
   leave(c, invalidated = false) {
+    this.city.leave(c);
     this.dequeue(c);
     const room = this.rooms.get(c.roomId);
     if (room) {
@@ -90,9 +94,16 @@ export class RaceHub {
   handle(c, m) {
     const now = this.clock();
     if (now - c.windowAt >= 1000) { c.windowAt = now; c.messages = 0; c.commands = 0; }
-    if (++c.messages > 65 || (m?.type !== 'input' && ++c.commands > 12)) { c.ws?.close(4008, 'Too many messages'); return; }
+    if (++c.messages > 65 || (!['input','world_input'].includes(m?.type) && ++c.commands > 12)) { c.ws?.close(4008, 'Too many messages'); return; }
     if (!m || Array.isArray(m) || m.v !== race.VERSION || typeof m.type !== 'string') return this.error(c, 'Unsupported message. Refresh WASA.');
     const room = this.rooms.get(c.roomId), p = room?.players.find(p => p.id === c.identity.id);
+    if(m.type==='world_input'){this.city.input(c,m);return;}
+    if(m.type==='explore'){
+      if(c.roomId||c.queued){this.error(c,'Leave your room or queue before exploring.');return;}
+      this.city.join(c,m.revision);return;
+    }
+    if(m.type==='city_travel'){this.city.travel(c,m.target);return;}
+    if(c.city&&['queue','create','join','spectate'].includes(m.type)){this.error(c,'Leave city exploration before joining a race.');return;}
     if (m.type === 'input') {
       if (!p || c.role !== 'player' || !race.validInput(m)) return this.error(c, 'Movement input rejected.');
       if (m.seq <= p.lastReceived) return; // Duplicates and old frames cannot move a player twice.
@@ -182,6 +193,7 @@ export class RaceHub {
     .map(r => ({id: r.id, course: race.course.name, phase: r.phase, spectators: r.spectators.size, players: r.players.map(p => p.name)})); }
   advance() {
     this.tick++; const now = this.clock();
+    this.city.advance();
     for (const room of this.rooms.values()) {
       if (room.phase === 'countdown' && this.tick >= room.startTick) room.phase = 'racing';
       const finishers = [];
@@ -211,7 +223,7 @@ export class RaceHub {
       }
       if (this.tick % 3 === 0) this.broadcast(room);
     }
-    for (const [id, c] of this.clients) if (!c.ws && !c.roomId && now - c.disconnectedAt >= RECONNECT_MS) this.clients.delete(id);
+    for (const [id, c] of this.clients) if (!c.ws && !c.roomId && !c.city && now - c.disconnectedAt >= RECONNECT_MS) this.clients.delete(id);
   }
   pump() {
     const now = this.clock(); let count = 0;
@@ -276,7 +288,7 @@ export function installMultiplayer(app, {authenticate, sessionHash, origin, stor
   timer.unref(); heartbeat.unref();
   app.addHook('preClose', async () => { closing = true; clearInterval(timer); clearInterval(heartbeat); await hub.close(); for (const ws of wss.clients) ws.terminate(); wss.close(); });
   app.get('/api/multiplayer', async () => ({ok: true, version: race.VERSION, course: race.course, online: [...hub.clients.values()].filter(c => c.ws?.readyState === WebSocket.OPEN).length,
-    queued: hub.queue.length, live: hub.live(), capacity: {rooms: MAX_ROOMS, spectatorsPerRoom: MAX_SPECTATORS}}));
+    queued: hub.queue.length, explorers:hub.city.count(), live: hub.live(), capacity: {rooms: MAX_ROOMS, spectatorsPerRoom: MAX_SPECTATORS,city:CITY_CAPACITY}}));
   app.get('/api/races/leaderboard', async () => ({ok: true, formula: 'Win 3 points · draw 1 · loss 0 · abandoned 0', players: await store.leaderboard()}));
   app.get('/api/races/mine', async (req, reply) => {
     const u = await authenticate(req);

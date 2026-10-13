@@ -18,7 +18,7 @@ def run(*args, **kwargs):
 def digest(data): return hashlib.sha256(data).hexdigest()
 def permitted(p):
     return p.startswith(('public/', 'tests/', 'tools/', '.github/workflows/')) or p in {
-        'api/server.mjs', 'api/multiplayer.mjs', 'api/race-store.mjs', 'api/multiplayer-migration.sql',
+        'api/server.mjs', 'api/multiplayer.mjs', 'api/city.mjs', 'api/race-store.mjs', 'api/multiplayer-migration.sql',
         'api/package.json', 'api/package-lock.json', 'README.md', 'MULTIPLAYER.md', 'WASA_REMAINING_WORK_ROADMAP.md'}
 payload = {}
 with tarfile.open(ARCHIVE) as tar:
@@ -58,7 +58,7 @@ for p in payload:
     if p.endswith(('.mjs','.js')) and not p.startswith('public/vendor/'):
         run('/opt/wasa/bin/node','--check',str(stage/p))
 config = NGINX.read_text()
-assert 'location = /api/multiplayer/socket' not in config, 'WebSocket proxy already configured; inspect before installing'
+has_socket = 'location = /api/multiplayer/socket' in config
 marker = '    location ^~ /api/ {'
 assert config.count(marker) == 1
 websocket = '''    location = /api/multiplayer/socket {
@@ -77,6 +77,7 @@ websocket = '''    location = /api/multiplayer/socket {
     }
 
 '''
+if has_socket: assert websocket.strip() in config, 'Live WebSocket proxy differs; inspect before changing it'
 written=[]; stopped=False
 try:
     run('systemctl','stop','wasa-api'); stopped=True
@@ -88,7 +89,7 @@ try:
     run('runuser','-u','wasa','--','psql','-v','ON_ERROR_STOP=1','-d','wasa_dev','-f',str(migration))
     shutil.rmtree(SITE/'api/node_modules');shutil.copytree(stage/'api/node_modules',SITE/'api/node_modules')
     run('chown','-R','wasa:wasa',str(SITE/'api/node_modules'))
-    NGINX.write_text(config.replace(marker,websocket+marker));run('nginx','-t');run('systemctl','start','wasa-api')
+    NGINX.write_text(config if has_socket else config.replace(marker,websocket+marker));run('nginx','-t');run('systemctl','start','wasa-api')
     for attempt in range(15):
         try:
             health=json.load(urllib.request.urlopen('http://127.0.0.1:3200/api/health',timeout=2))

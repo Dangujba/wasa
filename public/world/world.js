@@ -1,7 +1,7 @@
 /* WASA / World 02, immersive geographic expansion
  * Damaturu real OSM road + building footprints (ODbL).
  * Flyover: illustrative three-level interchange model, not surveyed geometry.
- * Player movement is local/offline only in this step.
+ * Signed-in explorers share the city through authenticated authoritative movement.
  */
 (() => {
 'use strict';
@@ -103,7 +103,7 @@ function lineMesh(name,segments,width,colorMaterial,height=.052){
  const vertex=new B.VertexData();vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;vertex.uvs=uvs;
  vertex.applyToMesh(mesh);mesh.material=colorMaterial;mesh.isPickable=false;mesh.freezeWorldMatrix();
  mesh.receiveShadows=true;
- mesh.metadata={wasaWalkable:name.startsWith('OSM mapped')||['street pavements','pavement edges'].includes(name)};
+ mesh.metadata={wasaWalkable:name.startsWith('OSM mapped')||['street pavements','pavement edges'].includes(name),wasaBandWidth:width};
  return mesh;
 }
 function segmentsForRoad(road){
@@ -1426,8 +1426,7 @@ function inputVector(){
  if(length>1){x/=length;z/=length;}
  return {forward:z,right:x};
 }
-function movePlayer(dt){
- if(!world.ready||!world.player)return;
+function movementIntent(dt){
  const input=inputVector();
  const moving=Math.hypot(input.forward,input.right)>.08;
  const sprint=world.keys.has('ShiftLeft')||world.keys.has('ShiftRight')||world.touch.sprint;
@@ -1485,7 +1484,20 @@ function movePlayer(dt){
    intendedX+=clamp(guidance.crossX*.9,-.9,.9);
    intendedZ+=clamp(guidance.crossZ*.9,-.9,.9);
  }
+ return {intendedX,intendedZ,sprint,moving};
+}
+function cityInput(dt){
+ const input=movementIntent(dt),speed=input.sprint?6.7:3.1;
+ const len=Math.max(speed,Math.hypot(input.intendedX,input.intendedZ));
+ return {x:Math.max(-1,Math.min(1,input.intendedX/len)),z:Math.max(-1,Math.min(1,input.intendedZ/len)),run:input.sprint};
+}
+function movePlayer(dt){
+ if(!world.ready||!world.player)return;
+ const {intendedX,intendedZ,sprint,moving}=world.network?{intendedX:0,intendedZ:0,sprint:false,moving:Math.hypot(world.network.state.vx,world.network.state.vz)>.08}:movementIntent(dt);
  const beforeVelocity=world.velocity.clone();
+ if(world.network){
+  const p=world.network.state;world.playerPos.set(p.x,p.y,p.z);world.velocity.set(p.vx,0,p.vz);world.heading=p.heading;world.turnVelocity=p.turnVelocity;world.groundHeight=p.groundHeight;world.groundSurface=p.surface;
+ }else{
  window.WasaLocomotion.velocityStep(world.velocity,intendedX,intendedZ,dt);
  const nextX=world.playerPos.x+world.velocity.x*dt;
  const nextZ=world.playerPos.z+world.velocity.z*dt;
@@ -1501,21 +1513,22 @@ function movePlayer(dt){
  }else{
     world.velocity.x=0;world.velocity.z=0;
  }
- world.player.position.copyFrom(world.playerPos);
+ }
+ world.player.position.copyFrom(world.playerPos);world.player.rotation.y=world.heading;
  const metresPerSecond=Math.hypot(world.velocity.x,world.velocity.z);
- if(metresPerSecond>.06){
+ if(!world.network&&metresPerSecond>.06){
    const wanted=Math.atan2(-world.velocity.x,-world.velocity.z);
    const turn=window.WasaLocomotion.turnStep(world.heading,world.turnVelocity||0,wanted,dt);
    world.heading=turn.heading;world.turnVelocity=turn.velocity;
    world.player.rotation.y=world.heading;
    world.walkPhase+=dt*(sprint?12:8);
- }else{world.walkPhase+=dt*2.5;world.turnVelocity=(world.turnVelocity||0)*Math.exp(-dt*12);}
+ }else if(!world.network){world.walkPhase+=dt*2.5;world.turnVelocity=(world.turnVelocity||0)*Math.exp(-dt*12);}
  const look=Math.PI/2-world.camera.alpha-world.heading;
  world.avatarRig.animate(dt,clamp(metresPerSecond/3.1,0,1),metresPerSecond>4.05,{
    speed:metresPerSecond,turnRate:world.turnVelocity,
    acceleration:{x:(world.velocity.x-beforeVelocity.x)/dt,z:(world.velocity.z-beforeVelocity.z)/dt},
    lookYaw:clamp(Math.atan2(Math.sin(look),Math.cos(look)),-.55,.55)*(moving?.35:.8),
-   sampleGround:world.surfaces?world.surfaces.sample:undefined});
+   sampleGround:world.network?world.network.floor:world.surfaces?world.surfaces.sample:undefined});
  const target=new B.Vector3(world.playerPos.x,world.playerPos.y+1.7,world.playerPos.z);
  // Mutate the target vector rather than replacing the ArcRotateCamera target.
  // Replacing it recalculated beta/radius as the player walked, causing unwanted
@@ -1699,6 +1712,7 @@ function setupControls(){
     landmarkPanel.hidden=true;landmarkBtn.setAttribute('aria-expanded','false');
  });
  $('preview-ysu').addEventListener('click',()=>{
+    if(world.network){const dest=world.landmarks.find(p=>p.kind==='university');if(dest)setDestination(dest);world.network.travel('ysu');landmarkPanel.hidden=true;return;}
     const campus=world.map.campus;
     if(!campus)return;
     const route=world.map.verifiedRoute?.p||[];
@@ -1739,6 +1753,7 @@ function setupControls(){
     canvas.focus({preventScroll:true});
     toast('YSU APPROACH ROAD · MAPPED CAMPUS AREA');
  });
+ $('city-respawn').addEventListener('click',()=>{if(world.network)world.network.travel('spawn');else{findSafeSpawn();placePlayer(world.playerPos.x,world.playerPos.z);}});
  $('camera-button').addEventListener('click',resetCamera);
  setMapVisible(window.matchMedia('(min-width:780px)').matches);
  $('help-button').addEventListener('click',openHelp);
@@ -1780,9 +1795,11 @@ async function loadPlayerProfile(){
    const r=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});
    const p=await r.json();
    if(p.authenticated && p.user){
+     world.account=p.user;
      world.name=p.user.displayName||p.user.username||world.name;
      const config=p.user.avatarConfig||{};
      if(Object.keys(config).length)world.config={...world.config,...config};
+     const avatarResponse=await fetch('/api/avatar',{credentials:'same-origin',cache:'no-store'});const saved=await avatarResponse.json();if(saved.ok&&saved.avatar)world.config={...world.config,...saved.avatar};
    }
  }catch(error){console.warn('[WASA WORLD] Guest mode',error.message);}
  // Temporary visual QA selections; account appearance records remain untouched.
@@ -1844,9 +1861,12 @@ async function start(){
    world.graphics.updateShadows(world.playerPos,true);
    progress(95,'INITIALIZING MOVEMENT');
    setupControls();
+   if(world.account){try{world.network=await window.WasaCityClient.create(world,cityInput);}catch(error){$('city-status').textContent='OFFLINE PREVIEW · '+error.message;}}else{$('city-status').textContent='SOLO PREVIEW';$('city-signin').hidden=false;}
+   window.addEventListener('pagehide',()=>world.network?.dispose(),{once:true});
    world.scene.render();
    world.engine.runRenderLoop(()=>{
      advanceInputSimulation();
+     world.network?.render(Math.min(world.engine.getDeltaTime()/1000,.1));
      world.graphics.sample(Math.min(world.engine.getDeltaTime()/1000,.25),world.playerPos);
      world.scene.render();
    });
