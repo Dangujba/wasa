@@ -20,7 +20,7 @@ const world = {
   name:'WASA EXPLORER',
   playerPos:new B.Vector3(-95,0,330),
   velocity:new B.Vector3(0,0,0),
-  heading:Math.PI/2-1.84,walkPhase:0,colliders:[],interactions:[],
+  heading:Math.PI/2-1.84,turnVelocity:0,walkPhase:0,colliders:[],interactions:[],
   keys:new Set(),touch:{x:0,y:0,sprint:false},clock:performance.now(),
   quality:localStorage.getItem('wasa-quality')||'auto',
   avatarRig:null,
@@ -67,7 +67,8 @@ function mat(name,color,metal=0,rough=1){
 function meshBox(name,x,y,z,w,h,d,material,parent=null){
  const o=B.MeshBuilder.CreateBox(name,{width:w,height:h,depth:d},world.scene);
  o.position.set(x,y,z);o.material=material;
- o.receiveShadows=true;o.metadata={wasaShadow:true};
+ o.receiveShadows=true;o.metadata={wasaShadow:true,
+   wasaWalkable:['flyover raised road deck','flyover approach ramp','north-south underpass','WASA arena arrival plaza'].includes(name)};
  if(material.albedoTexture)window.WasaRendering.boxUV(o);
  if(parent)o.parent=parent;
  return o;
@@ -102,6 +103,7 @@ function lineMesh(name,segments,width,colorMaterial,height=.052){
  const vertex=new B.VertexData();vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;vertex.uvs=uvs;
  vertex.applyToMesh(mesh);mesh.material=colorMaterial;mesh.isPickable=false;mesh.freezeWorldMatrix();
  mesh.receiveShadows=true;
+ mesh.metadata={wasaWalkable:name.startsWith('OSM mapped')||['street pavements','pavement edges'].includes(name)};
  return mesh;
 }
 function segmentsForRoad(road){
@@ -393,6 +395,8 @@ function createFlyover(){
      const z=side*7.62;
      const barrier=meshBox('cantilever safety parapet',x,y+.51,z,len,.79,.32,parapet);
      barrier.rotation.z=tilt;
+     world.colliders.push({minX:x1,maxX:x2,minZ:z-.20,maxZ:z+.20,
+       minY:Math.min(y1,y2)+.10,maxY:Math.max(y1,y2)+.92,hard:true,source:'flyover barrier'});
      const handrail=meshBox('flyover blue steel handrail',x,y+1.02,z,len,.14,.16,steel);
      handrail.rotation.z=tilt;
      const reflector=meshBox('outer reflective safety strip',x,y+.08,side*7.13,len,.045,.16,yellow);
@@ -412,6 +416,13 @@ function createFlyover(){
        panel.rotation.z=tilt;
       }
    }
+ }
+ // Short approach wedges join the deck's 0.625 m end surface to street level.
+ for(const side of [-1,1]){
+   const x1=side<0?-285:265,x2=x1+20,y1=side<0?.13:.625,y2=side<0?.625:.13;
+   const tilt=Math.atan2(y2-y1,x2-x1);
+   const ramp=meshBox('flyover approach ramp',(x1+x2)/2,(y1+y2)/2-.05/Math.cos(tilt),.45,Math.hypot(20,y2-y1),.10,15.2,deck);
+   ramp.rotation.z=tilt;
  }
  // North-south traffic beneath the overpass. Generic traffic lanes.
  const passage=meshBox('north-south underpass',0,.11,0,17.1,.12,320,under);
@@ -433,7 +444,8 @@ function createFlyover(){
      meshBox('bridge pier pad foundation',x,.30,z,2.5,.5,2.9,base);
      const pillar=meshCylinder('flyover reinforced pillar',x,Math.max(1.9,y/2),z,1.30,1.70,Math.max(3.9,y-.6),concrete,null,16);
      meshBox('concrete capital',x,y-.62,z,2.6,.40,2.8,edge);
-     world.colliders.push({minX:x-1.2,maxX:x+1.2,minZ:z-1.35,maxZ:z+1.35,hard:true,source:'flyover pier'});
+     world.colliders.push({minX:x-1.2,maxX:x+1.2,minZ:z-1.35,maxZ:z+1.35,
+       minY:0,maxY:y-.3,hard:true,source:'flyover pier'});
    }
    meshBox('cross-girder on pier pair',x,bridgeY(x)-.32,.45,2.1,.65,13.2,concrete);
  }
@@ -1380,19 +1392,28 @@ function roadWalkingCourse(x,z,ux,uz){
     crossX:nearest.px-x,crossZ:nearest.pz-z,road:chosen.name};
 }
 
-function playerCanGo(x,z){
+function playerCanGo(x,z,height=world.playerPos.y){
  const lim=world.map.limitsMeters;
  if(lim && (x<lim.minX+12||x>lim.maxX-12||z<lim.minZ+12||z>lim.maxZ-12))return false;
  if(!lim && (Math.abs(x)>world.worldSize-20||Math.abs(z)>world.worldSize-20))return false;
  const surface=roadAt(x,z);
  const onStreet=surface&&surface.distance<=Math.max(.95,surface.width/2-.35);
  for(const b of world.colliders){
+  if(b.minY!==undefined&&(height>b.maxY||height+1.72<b.minY))continue;
   if(x>b.minX-.45&&x<b.maxX+.45&&z>b.minZ-.45&&z<b.maxZ+.45){
    if(onStreet&&!b.hard)continue; // road beats conservative facade AABBs
    return false;
   }
  }
  return true;
+}
+function placePlayer(x,z,reference=0){
+ const floor=world.surfaces?.sample(x,z,reference);
+ world.playerPos.set(x,floor?.height??-.08,z);
+ world.groundHeight=world.playerPos.y;world.groundSurface=floor?.name||'ground';
+ world.velocity.set(0,0,0);world.turnVelocity=0;
+ world.movementActive=false;world.travelDirection=null;world.roadCourse=null;
+ world.player?.position.copyFrom(world.playerPos);
 }
 function inputVector(){
  const k=world.keys;
@@ -1428,7 +1449,7 @@ function movePlayer(dt){
  const alpha=world.movementActive?world.movementAlpha:world.camera.alpha;
  let fx=-Math.cos(alpha),fz=-Math.sin(alpha);
  let guidance=null;
- if(moving && Math.abs(input.forward)>.7 && Math.abs(input.right)<.12){
+ if(moving && !world.groundSurface?.startsWith('flyover') && Math.abs(input.forward)>.7 && Math.abs(input.right)<.12){
    const sign=Math.sign(input.forward);
    const desired=world.travelDirection||{x:fx*sign,z:fz*sign};
    guidance=roadWalkingCourse(world.playerPos.x,world.playerPos.z,desired.x,desired.z);
@@ -1464,37 +1485,45 @@ function movePlayer(dt){
    intendedX+=clamp(guidance.crossX*.9,-.9,.9);
    intendedZ+=clamp(guidance.crossZ*.9,-.9,.9);
  }
- const ease=1-Math.exp(-12*dt);
- world.velocity.x+=(intendedX-world.velocity.x)*ease;
- world.velocity.z+=(intendedZ-world.velocity.z)*ease;
+ const beforeVelocity=world.velocity.clone();
+ window.WasaLocomotion.velocityStep(world.velocity,intendedX,intendedZ,dt);
  const nextX=world.playerPos.x+world.velocity.x*dt;
  const nextZ=world.playerPos.z+world.velocity.z*dt;
  // Use a single predicted position. Previous independent X/Z collision
  // resolution caused a character to slide sideways when a wall blocked
  // one axis, making an otherwise straight walk appear to change direction.
- if(playerCanGo(nextX,nextZ)){
+ const floor=world.surfaces?.sample(nextX,nextZ,world.groundHeight??world.playerPos.y);
+ if((!world.surfaces||floor)&&playerCanGo(nextX,nextZ,floor?.height)){
     world.playerPos.x=nextX;
     world.playerPos.z=nextZ;
+    if(floor){world.groundHeight=floor.height;world.groundSurface=floor.name;
+      world.playerPos.y+=(floor.height-world.playerPos.y)*(1-Math.exp(-dt*24));}
  }else{
     world.velocity.x=0;world.velocity.z=0;
  }
- world.player.position.set(world.playerPos.x,0,world.playerPos.z);
- if(moving&&Math.hypot(intendedX,intendedZ)>.05){
-   const wanted=Math.atan2(-intendedX,-intendedZ);
-   const diff=Math.atan2(Math.sin(wanted-world.heading),Math.cos(wanted-world.heading));
-   world.heading+=diff*clamp(dt*11,0,1);
+ world.player.position.copyFrom(world.playerPos);
+ const metresPerSecond=Math.hypot(world.velocity.x,world.velocity.z);
+ if(metresPerSecond>.06){
+   const wanted=Math.atan2(-world.velocity.x,-world.velocity.z);
+   const turn=window.WasaLocomotion.turnStep(world.heading,world.turnVelocity||0,wanted,dt);
+   world.heading=turn.heading;world.turnVelocity=turn.velocity;
    world.player.rotation.y=world.heading;
    world.walkPhase+=dt*(sprint?12:8);
- }else world.walkPhase+=dt*2.5;
- world.avatarRig.animate(dt,moving?1:0,sprint);
- const target=new B.Vector3(world.playerPos.x,1.7,world.playerPos.z);
+ }else{world.walkPhase+=dt*2.5;world.turnVelocity=(world.turnVelocity||0)*Math.exp(-dt*12);}
+ const look=Math.PI/2-world.camera.alpha-world.heading;
+ world.avatarRig.animate(dt,clamp(metresPerSecond/3.1,0,1),metresPerSecond>4.05,{
+   speed:metresPerSecond,turnRate:world.turnVelocity,
+   acceleration:{x:(world.velocity.x-beforeVelocity.x)/dt,z:(world.velocity.z-beforeVelocity.z)/dt},
+   lookYaw:clamp(Math.atan2(Math.sin(look),Math.cos(look)),-.55,.55)*(moving?.35:.8),
+   sampleGround:world.surfaces?world.surfaces.sample:undefined});
+ const target=new B.Vector3(world.playerPos.x,world.playerPos.y+1.7,world.playerPos.z);
  // Mutate the target vector rather than replacing the ArcRotateCamera target.
  // Replacing it recalculated beta/radius as the player walked, causing unwanted
  // angle and zoom drift instead of a stable follow-camera.
  world.camera.target.copyFrom(B.Vector3.Lerp(world.camera.target,target,clamp(dt*8,0,1)));
  const actualSpeed=Math.hypot(world.velocity.x,world.velocity.z)*3.6;
  $('speed-display').textContent=actualSpeed.toFixed(1);
- $('walk-mode').textContent=moving?sprint?'RUNNING':'WALKING':'IDLE';
+ $('walk-mode').textContent=metresPerSecond>.08?metresPerSecond>4.05?'RUNNING':'WALKING':'IDLE';
 }
 
 function getPlayerLatLon(){
@@ -1537,7 +1566,9 @@ function updateUI(){
      if(!panel){panel=document.createElement('output');panel.id='render-stats';panel.style.cssText='position:absolute;bottom:10px;left:12px;z-index:20;padding:6px;background:#102629e8;color:#fff;font:11px monospace;pointer-events:none';document.body.append(panel);}
      const g=world.graphics.status;
      const avatar=world.avatarRig.getProfile();
-     panel.textContent=g.tier+' | '+g.fps+' FPS | shadows '+g.shadowCasters+' @ '+g.shadowSize+' | AO '+g.ao+' | bloom '+g.bloom+' | avatar '+(avatar.source||'procedural');
+     const contact=avatar.animation?.contacts||[];
+     panel.textContent=g.tier+' | '+g.fps+' FPS | shadows '+g.shadowCasters+' @ '+g.shadowSize+' | AO '+g.ao+' | bloom '+g.bloom+' | avatar '+(avatar.source||'procedural')+
+       ' | height '+world.playerPos.y.toFixed(2)+'m | '+(world.groundSurface||'ground')+(contact.length?' | feet '+contact.map(c=>Math.round(c.clearance*1000)).join('/')+'mm':'');
    }
  }
  updateLandmarkVisibility();
@@ -1604,7 +1635,7 @@ function resetCamera(){
  // Preserve movement heading while bringing the camera to the human-scale chase angle.
  world.camera.alpha=Math.PI/2-world.heading;
  world.camera.beta=1.16;world.camera.radius=8.0;
- world.camera.target.copyFrom(new B.Vector3(world.playerPos.x,1.7,world.playerPos.z));
+ world.camera.target.copyFrom(new B.Vector3(world.playerPos.x,world.playerPos.y+1.7,world.playerPos.z));
 }
 function setMapVisible(visible){
  world.showMap=!!visible;
@@ -1681,13 +1712,11 @@ function setupControls(){
       if(playerCanGo(x,z)&&dist(x,z,campus.p[0],campus.p[1])>30){spot=[x,z];break;}
     }
     if(!spot){toast('YSU preview point is obstructed; campus still mapped.');return;}
-    world.playerPos.set(spot[0],0,spot[1]);
-    world.velocity.set(0,0,0);
-    world.movementActive=false;world.travelDirection=null;world.roadCourse=null;
+    placePlayer(spot[0],spot[1]);
     updateSceneryCulling(true);
     const dest=world.landmarks.find(x=>x.kind==='university');
     if(dest)setDestination(dest);
-    world.camera.target.set(spot[0],1.7,spot[1]);
+    world.camera.target.set(spot[0],world.playerPos.y+1.7,spot[1]);
     // Prefer looking toward campus, but choose a collision-free forward heading.
     // Some OSM footprints extend close to the mapped YSU approach street.
     const dx=campus.p[0]-spot[0],dz=campus.p[1]-spot[1];
@@ -1791,10 +1820,22 @@ async function start(){
    else console.warn('[WASA] Street block skipped: updated map has no clear site.');
    createStreetDistricts(map);createUniversityDistrict(map);createWayfindingBeacon();
    progress(89,'OPTIMIZING CITY GEOMETRY');
+   world.surfaces=window.WasaLocomotion.createSurfaceIndex();
+   for(const mesh of world.scene.meshes)if(mesh.metadata?.wasaWalkable)world.surfaces.addMesh(mesh);
    optimizeStaticMeshes();
    prepareSceneryCulling();
    buildLandmarks(map);
    findSafeSpawn();
+   const motionPreview=new URLSearchParams(location.search);
+   if(motionPreview.has('debug')&&motionPreview.get('motion')==='flyover'){
+     world.playerPos.set(-280,.26,.45);world.camera.alpha=Math.PI;world.heading=-Math.PI/2;
+   }else if(motionPreview.has('debug')&&motionPreview.get('motion')==='curb'&&world.streetBlock){
+     const block=world.streetBlock,p=window.WasaStreetBlock.point(block,-19,block.half-.30);
+     world.playerPos.set(p[0],.13,p[1]);world.camera.alpha=Math.atan2(-block.dx,block.dz);world.heading=Math.PI/2-world.camera.alpha;
+   }
+   const spawnFloor=world.surfaces.sample(world.playerPos.x,world.playerPos.z,world.playerPos.y);
+   world.playerPos.y=world.groundHeight=spawnFloor?.height??-.08;world.groundSurface=spawnFloor?.name||'ground';
+   world.camera.target.copyFrom(new B.Vector3(world.playerPos.x,world.playerPos.y+1.7,world.playerPos.z));
    updateSceneryCulling(true);
    buildAvatar(world.config);
    await world.avatarRig.ready;
@@ -1819,8 +1860,8 @@ async function start(){
    // Keep world geometry and source provenance inspectable for QA.
    window.WasaWorldQA={
      getSource:()=>({source:map.source,roadWays:map.roads.length,footprints:map.buildings.length,origin:map.origin,extentMeters:map.extentMeters,renderedBuildings:world.buildingCount,conceptBuildings:world.districtCount,campus:map.campus}),
-     getPlayer:()=>({x:world.playerPos.x,z:world.playerPos.z,latlon:getPlayerLatLon()}),
-     teleportTest:(x,z)=>{if(!playerCanGo(x,z))return false;world.playerPos.set(x,0,z);world.movementActive=false;world.velocity.set(0,0,0);updateSceneryCulling(true);return true;},
+     getPlayer:()=>({x:world.playerPos.x,y:world.playerPos.y,z:world.playerPos.z,surface:world.groundSurface,latlon:getPlayerLatLon()}),
+     teleportTest:(x,z)=>{const height=world.surfaces.sample(x,z,0)?.height;if(height===undefined||!playerCanGo(x,z,height))return false;placePlayer(x,z);updateSceneryCulling(true);return true;},
      getMeshCount:()=>world.scene.meshes.length,
      getAvatar:()=>world.avatarRig.getProfile(),
      getStreetBlock:()=>world.streetBlock?({...world.streetBlock.stats,roadName:world.streetBlock.roadName,

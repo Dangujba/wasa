@@ -54,15 +54,19 @@ the preview, including when changing body types.
 idle/walk/run controls for every outfit and blends positions/quaternions between
 clips. Idle includes breathing and weight shifts; movement includes opposing
 arm/leg swing, knee flexion, relaxed fingers and damped garment motion. Floor
-contact is baked from the shoe soles. These are authored keyframes, not motion
-capture or physical cloth simulation. Facial animation and runtime foot IK are
-future refinements.
+contact is baked from the shoe soles. `public/avatar/wasa-motion.js` adds runtime
+two-bone foot placement, support-plane sole alignment and bounded stance/pelvis
+corrections in the world. Head and garment joints add damped motion driven by
+look bearing, acceleration and turns. These are authored clips and secondary
+bone motion, not motion capture or physical cloth simulation. Facial animation
+remains a future refinement.
 
 Both assets pass Khronos glTF Validator with zero errors, warnings and infos.
-Run `node --test tests/*.test.cjs` for the 14 checks covering all nine outfits,
+Run `node --test tests/*.test.cjs` for the 19 checks covering all nine outfits,
 geometry, normalized skin weights, continuous loops, articulation, transitions,
 world-scale floor tolerance, scarves/hair/accessories, texture/material selection,
-loading/disposal races, resource counts, city geometry and controller directions.
+loading/disposal races, resource counts, city geometry and controller directions,
+slope/curb sole contact, flyover access, acceleration/turn limits and motion settling.
 CPU imports omit image decoding; browser checks cover actual maps and shaders.
 For temporary world visual QA use `?debug=1&body=feminine&outfit=abaya` (or a valid
 male outfit). These query selections do not write account appearance records.

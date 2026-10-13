@@ -41,7 +41,7 @@ existing schema. The procedural renderer is a download-error fallback.
 See `public/avatar/models/ART-SOURCES.md` for the CC0 bases, garment/animation
 pipeline, limits and reproducible build (`python tools/build-wardrobe.py`).
 The bundled Babylon 8.26.0 loader needs no external runtime CDN or decoder.
-Both GLBs pass Khronos validation with zero errors/warnings/infos. All 14 checks
+Both GLBs pass Khronos validation with zero errors/warnings/infos. All 19 checks
 run with `node --test tests/*.test.cjs`, including all nine outfits, weights,
 loops, articulation, transitions, world-scale floor tolerance, scarf/accessory
 selection, loading races and repeated wardrobe resource counts.
@@ -54,7 +54,39 @@ The studio keeps its preparation overlay visible until the model/shaders are rea
 The user explicitly deferred real-phone testing on 13 October 2026, allowing the
 wardrobe and live deployment to proceed. Responsive checks cover layout only.
 The three-minute real-phone route and sustained 30 FPS target remain future
-hardware acceptance work. Facial animation, physical cloth and runtime IK remain
+hardware acceptance work. Facial animation and physical cloth remain
 later refinements.
+
+## Movement polish
+
+The world now indexes explicitly walkable road, pavement, curb, drain-crossing
+and flyover surfaces before static batching. Height selection preserves the
+current level at stacked crossings. The flyover has approach ramps, height-aware
+pier/barrier collisions, and camera follow at the player's actual elevation.
+Steps above 0.32 m and drops above 0.42 m block movement; there is no jumping or
+falling controller. Decorative roofs and objects are excluded from this index.
+
+Velocity uses bounded acceleration/braking; heading takes the shortest turn with
+a bounded angular speed. Gait cadence and walk/run blends follow actual speed,
+including coasting to a stop and blocked movement. The original joystick
+direction correction remains covered at five camera bearings.
+
+`public/avatar/wasa-motion.js` adds two-bone leg IK, sole alignment to the support
+plane, short stance anchors and a reach-limited pelvis adjustment. Both body rigs
+use the same solver. Head look, torso lean and four garment joints respond with
+damped springs to camera bearing, acceleration and turns. This is bounded
+secondary bone motion, not physical cloth simulation. The shipped GLBs are
+unchanged; the solver runs after their blended baked pose.
+
+Tests cover actual sole geometry on slopes/split-height curbs at 60 Hz and 65 ms
+steps, continuous flyover access, underpass/deck separation, pier/barrier
+collisions, head/cloth settling, and acceleration/turn limits. Browser QA uses
+`?debug=1&motion=flyover` or `?debug=1&motion=curb` with optional body/outfit
+selections; these previews do not save profile data. A debug overlay reports
+surface height and sole clearances. Real-phone testing is still deferred.
+
+Releases are packaged from a clean committed tree, with a commit/hash manifest
+and a rollback snapshot on the server. GitHub and the live files are verified
+against that commit after publication.
 
 Defer dynamic time of day, heat haze, dust effects and additional post-processing until the chosen phone passes the frame-rate target. A new dependency-free engine feature still requires art, tuning and verification effort.

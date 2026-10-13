@@ -25,8 +25,9 @@ test('joystick and keyboard movement project in the intended screen direction at
           touch:{x:0,y:0,sprint:false,...control.touch},playerPos:B.Vector3.Zero(),
           velocity:B.Vector3.Zero(),avatarRig:{animate(){}},heading:0,walkPhase:0
         };
-        const context = vm.createContext({B,world,performance,$:()=>({textContent:''}),
+        const context = vm.createContext({B,world,performance,window:{BABYLON:B},$:()=>({textContent:''}),
           clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),playerCanGo:()=>true,roadWalkingCourse:()=>null});
+        vm.runInContext(fs.readFileSync('public/world/wasa-locomotion.js','utf8'),context);
         for(const name of ['inputVector','movePlayer']) {
           const start=source.indexOf('function '+name+'('),end=source.indexOf('\nfunction ',start+1);
           assert.ok(start>=0&&end>start);

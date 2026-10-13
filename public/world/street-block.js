@@ -58,6 +58,7 @@
    const pieces=[],stats={shops:7,compounds:2,trees:0,drainBridges:0,sourceRoad:layout.roadId,illustrative:true};
    const add=(name,x,y,z,w,h,d,m)=>{
      const mesh=meshBox('street block '+name,x,y,z,w,h,d,m,root);
+     mesh.metadata.wasaWalkable=['sandy verge','paved footway','drain rim','drain access bridge','shop floor'].includes(name);
      if(h<=.22&&!/canopy|roof|crossarm/.test(name))mesh.metadata.wasaShadow=false;
      pieces.push(mesh);return mesh;
    };

@@ -33,6 +33,7 @@ The current API is configured for a local PostgreSQL socket and the database rol
 - Map-based Damaturu street network and YSU corridor.
 - Illustrative commercial storefronts, homes, flyover, filling stations and university-area scenery.
 - Third-person walking, mini-map, camera controls, avatar studio and account API.
+- Walkable flyover ramps and curbs, runtime foot placement, smooth acceleration/turns, and damped head/garment motion.
 - Multiplayer gameplay, production-quality vehicle racing and architectural fidelity are future work.
 
 The building models and bridge structure are game-art approximations, not surveyed architecture. Businesses without verified location information are not pinned to invented addresses.

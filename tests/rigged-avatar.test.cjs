@@ -45,7 +45,7 @@ class Canvas{
 function fixture(){
   global.OffscreenCanvas=Canvas;
   global.window={BABYLON:B,addEventListener(){},removeEventListener(){}};
-  for(const file of ['public/rendering/wasa-rendering.js','public/avatar/wasa-human-lite.js','public/avatar/wasa-rigged-human.js'])
+  for(const file of ['public/rendering/wasa-rendering.js','public/avatar/wasa-human-lite.js','public/avatar/wasa-motion.js','public/avatar/wasa-rigged-human.js'])
     vm.runInThisContext(fs.readFileSync(file,'utf8'),{filename:file});
   const engine=new B.NullEngine(),scene=new B.Scene(engine);
   new B.FreeCamera('test',new B.Vector3(0,2,-5),scene);
@@ -176,4 +176,60 @@ test('female scarf, hair and accessory choices remain distinct on the skinned ba
     }
     assert.equal(f.loads(),1);
   }finally{f.dispose();}
+});
+
+test('runtime foot placement adapts both body rigs to slopes and split-height curbs',async()=>{
+ const f=fixture();
+ try{
+   for(const look of [cfg,{...cfg,outfit:'babbar_riga'},{...cfg,body:'feminine',outfit:'abaya',headwear:'hijab'}]){
+     const actor=f.human.create(f.scene,look,{detail:'medium'});await actor.ready;
+     actor.root.scaling.setAll((look.body==='feminine'?1.72:1.82)/actor.getProfile().height);
+     const body=look.body,scale=bundles[body].manifest.heightMetres/1.81539,inverse=read(bundles[body].gltf.skins[0].inverseBindMatrices,body);
+     const soles=['L','R'].map(side=>{
+       const bone=actor.rig.bones.find(b=>b.name==='foot.'+side),m=inverse[actor.rig.bones.indexOf(bone)],pivot=new B.Vector3(-m[12],-m[13],-m[14]);
+       return {node:bone.getTransformNode(),points:Array.from({length:32},(_,i)=>new B.Vector3(pivot.x+.064*scale*Math.cos(i/32*Math.PI*2),.002*scale,(.096+.143*Math.sin(i/32*Math.PI*2))*scale).subtract(pivot))};
+     });
+     for(const dt of [1/60,.065])for(const terrain of ['slope','curb'])for(const run of [false,true]){
+       const sampleGround=(x,z)=>({height:terrain==='slope'?.06*x+.04*z:x>0?.16:0,
+         normal:terrain==='slope'?new B.Vector3(-.06,1,-.04).normalize():B.Vector3.Up(),name:terrain});
+       actor.root.position.set(0,terrain==='curb'?.08:0,0);
+       for(let i=0;i<100;i++){
+         actor.root.position.z-=1.5*dt;actor.root.position.y=terrain==='curb'?.08:sampleGround(0,actor.root.position.z).height;
+         actor.animate(dt,1,run,{sampleGround,speed:run?4:2,lookYaw:.4,turnRate:.5,acceleration:{x:0,z:i<20?-4:0}});
+         const animation=actor.getProfile().animation;
+         assert.equal(animation.footIK,true);assert.ok(Number.isFinite(animation.pelvis));
+         for(const contact of animation.contacts)assert.ok(contact.clearance>-.012,'Sole does not penetrate '+terrain+': '+contact.clearance);
+         for(const bone of actor.rig.bones)assert.ok(bone.getTransformNode().rotationQuaternion.asArray().every(Number.isFinite));
+         const actual=soles.flatMap(({node,points})=>{node.computeWorldMatrix(true);return points.map(p=>{
+           const world=B.Vector3.TransformCoordinates(p,node.getWorldMatrix());return world.y-sampleGround(world.x,world.z).height;
+         });});
+         assert.ok(Math.min(...actual)>-.012&&Math.min(...actual)<.025,'Actual sole geometry stays near its support surface: '+JSON.stringify({minimum:Math.min(...actual),outfit:look.outfit,terrain,run,i,animation}));
+       }
+       assert.ok(actor.getProfile().animation.headYaw>.39,'Head smoothly follows the supplied look bearing');
+     }
+     actor.dispose();
+   }
+ }finally{f.dispose();}
+});
+
+test('head and garment joints respond smoothly, remain bounded and settle after movement stops',async()=>{
+ const f=fixture();
+ try{
+   for(const look of [{...cfg,outfit:'babbar_riga'},{...cfg,body:'feminine',outfit:'abaya',headwear:'hijab'}]){
+     const plain=f.human.create(f.scene,look,{detail:'medium'}),moving=f.human.create(f.scene,look,{detail:'medium'});
+     await Promise.all([plain.ready,moving.ready]);
+     const node=(actor,name)=>actor.rig.bones.find(b=>b.name===name).getTransformNode();
+     let previous=node(moving,'head').rotationQuaternion.clone();
+     for(let i=0;i<60;i++){
+       plain.animate(1/60,0,false);moving.animate(1/60,0,false,{lookYaw:.45,speed:4,turnRate:2,acceleration:{x:3,z:-5}});
+       const head=node(moving,'head').rotationQuaternion;
+       assert.ok(Math.abs(B.Quaternion.Dot(previous,head))>.995,'Head has no abrupt single-frame rotation');previous=head.clone();
+     }
+     assert.ok(Math.abs(B.Quaternion.Dot(node(plain,'head').rotationQuaternion,node(moving,'head').rotationQuaternion))<.99);
+     assert.ok(Math.abs(B.Quaternion.Dot(node(plain,'cloth_lower.L').rotationQuaternion,node(moving,'cloth_lower.L').rotationQuaternion))<.999,'Garment responds to acceleration/turns');
+     for(let i=0;i<180;i++){plain.animate(1/60,0,false);moving.animate(1/60,0,false);}
+     for(const name of ['head','cloth_lower.L','cloth_upper.R'])assert.ok(Math.abs(B.Quaternion.Dot(node(plain,name).rotationQuaternion,node(moving,name).rotationQuaternion))>.99999,'Secondary motion settles to the original pose');
+     plain.dispose();moving.dispose();
+   }
+ }finally{f.dispose();}
 });

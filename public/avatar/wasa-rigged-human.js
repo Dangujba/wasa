@@ -85,7 +85,7 @@
    return materials;
  }
 
- function animator(groups,cfg){
+ function animator(groups,cfg,secondary){
    // Sample the actual GLB keyframes. Using Animation.evaluate keeps pause and
    // deterministic fixed-step world movement aligned, with no competing engine
    // animation clock. Quaternion blending avoids a snap when movement changes.
@@ -103,11 +103,13 @@
    }
    let time=0,phase=0,amount=0,running=0;
    const q1=new B.Quaternion(),q2=new B.Quaternion(),v1=new B.Vector3(),v2=new B.Vector3();
-   function animate(dt,move=0,run=false){
+   function animate(dt,move=0,run=false,context={}){
      dt=Math.max(0,Math.min(dt||0,.08));time+=dt;
      const desired=Math.min(1,Math.abs(Number(move)||0)),ease=1-Math.exp(-dt*9);
      amount+=(desired-amount)*ease;running+=((run?1:0)-running)*ease;
-     phase=(phase+dt*((1-running)+running/.68))%1;
+     const stride=(robed(cfg)?.9:1.3)*(1-running)+(robed(cfg)?1.4:2.1)*running;
+     const cadence=Number.isFinite(context.speed)?Math.min(3,context.speed/stride):(1-running)+running/.68;
+     phase=(phase+dt*cadence)%1;
      for(const {target,property,clips:track} of tracks.values()){
        const sample=(clip,t)=>clip.animation.evaluate(clip.from+(clip.to-clip.from)*t);
        const idle=sample(track.idle,(time%4)/4),walk=sample(track.walk,phase),sprint=sample(track.run,phase);
@@ -121,9 +123,10 @@
          target.position.copyFrom(v2);
        }
      }
+     secondary?.apply(dt,context,amount);
    }
    animate(0);
-   return {animate,status:()=>({source:'glb',clip:amount<.05?'idle':running>.5?'run':'walk',blend:amount})};
+   return {animate,status:()=>({source:'glb',clip:amount<.05?'idle':running>.5?'run':'walk',blend:amount,...secondary?.status()})};
  }
 
  function create(scene,cfg={},opts={}){
@@ -156,7 +159,8 @@
        // performs handedness conversion; this is just the facing convention.
        pivot.rotation.y=Math.PI;
        for(const node of instance.rootNodes)node.parent=pivot;
-       const motion=animator(instance.animationGroups,cfg);
+       const secondary=window.WasaMotion?.create(instance.skeletons[0],root,meshes);
+       const motion=animator(instance.animationGroups,cfg,secondary);
        actor?.dispose();
        actor={root:pivot,animate:motion.animate,
          getProfile:()=>({body:body==='feminine'?'female':'male',height:spec.studioHeight,jointCount:42,source:'glb',outfit:cfg.outfit,
@@ -188,5 +192,5 @@
    result.ready=cached?Promise.resolve(instantiate(cached)):preload(scene,body).then(instantiate);
    return result;
  }
- window.WasaHuman={create,preload,eligible,version:'3.1.0-wardrobe',proceduralVersion:procedural.version};
+ window.WasaHuman={create,preload,eligible,version:'3.2.0-motion',proceduralVersion:procedural.version};
 })();

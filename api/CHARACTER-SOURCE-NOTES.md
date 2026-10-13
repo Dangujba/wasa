@@ -12,5 +12,7 @@ The obsolete Ready Player Me/Wolf3D repository models are not shipped.
 Existing avatar IDs and account APIs are unchanged. Saved appearance settings
 continue to select their corresponding outfit. The Lite renderer is an error
 fallback. Real-phone performance testing was deferred at the user's request on
-13 October 2026. Facial animation, physical cloth and runtime IK remain future
-art refinements; the current wardrobe is a pre-alpha game-art implementation.
+13 October 2026. Runtime foot IK and damped head/garment motion are now applied
+after baked clips; see public/avatar/wasa-motion.js and REALISM_UPGRADE.md.
+Facial animation and physical cloth remain future art refinements; the current
+wardrobe is a pre-alpha game-art implementation.
