@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const R = require('../public/multiplayer/simulation.js');
 const {randomUUID} = require('node:crypto');
 const importHub = import('../api/multiplayer.mjs');
+const fs = require('node:fs'), vm = require('node:vm');
 function ws() { return {readyState:1,bufferedAmount:0,messages:[],send(m){this.messages.push(JSON.parse(m));},close(){this.readyState=3;}}; }
 async function setup() {
   const {RaceHub} = await importHub; let now=0;const saved=new Map();
@@ -22,6 +23,14 @@ test('shared course is continuous, bounded, and uses server-controlled movement 
   assert.ok(state.x<=R.course.bounds.maxX-R.course.radius);
   assert.equal(R.validInput({v:1,type:'input',seq:1,x:0,z:-1,run:true,position:{z:-156}}),false);
   assert.equal(R.validInput({v:1,type:'input',seq:1,x:NaN,z:0,run:true}),false);
+  const source=fs.readFileSync('public/multiplayer/multiplayer.js','utf8');
+  const start=source.indexOf(' function readIntent()'),end=source.indexOf('\n setInterval',start);
+  for(let degrees=0;degrees<360;degrees++) for(const chord of [['ArrowUp'],['ArrowRight'],['ArrowUp','ArrowRight'],['ArrowDown','ArrowLeft']]){
+    const context={keys:new Set(chord),touch:{x:0,y:0,run:false},camera:{alpha:degrees*Math.PI/180},movementBearing:null};
+    vm.runInNewContext(source.slice(start,end)+'\nthis.intent=readIntent();',context);
+    assert.ok(R.validInput({v:1,type:'input',seq:1,...context.intent}),'Camera-relative input remains valid at '+degrees+' degrees');
+    assert.ok(Math.hypot(context.intent.x,context.intent.z)<=1+1e-12,'Diagonal input has no speed boost');
+  }
 });
 test('matchmaking, spectator ACL, authoritative race, single saved result and rematch',async()=>{
   const {hub,a,b,s,saved,tick,action}=await setup();

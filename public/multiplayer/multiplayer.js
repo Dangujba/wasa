@@ -157,7 +157,7 @@
      if (room.phase==='waiting'||room.phase==='racing') for(const input of pending) predicted=R.step(predicted,input);
      else pending=[];
    }
-   if (entering || oldPhase!==next.phase) clearInput();
+   if (entering || (oldPhase!==next.phase && next.phase!=='racing')) clearInput();
    for(const p of room.players){const actor=actors.get(p.id);if(actor){actor.target={...p.state};if(entering||oldPhase!==next.phase)actor.draw={...p.state};}}
    for(const [id,actor] of actors) if(!room.players.some(p=>p.id===id)){actor.rig.dispose();actor.label.material.dispose(true,true);actor.label.dispose();actors.delete(id);}
    renderHUD();enterArena();updateActions();
@@ -185,7 +185,8 @@
    const right=Number(keys.has('ArrowRight')||keys.has('KeyD'))-Number(keys.has('ArrowLeft')||keys.has('KeyA'))+touch.x;
    if(Math.hypot(forward,right)>.05){if(movementBearing==null)movementBearing=camera?.alpha??Math.PI/2;}else movementBearing=null;
    const alpha=movementBearing??Math.PI/2,fx=-Math.cos(alpha),fz=-Math.sin(alpha),length=Math.max(1,Math.hypot(forward,right));
-   return {x:(fx*forward+fz*right)/length,z:(fz*forward-fx*right)/length,run:keys.has('ShiftLeft')||keys.has('ShiftRight')||touch.run};
+   return {x:Math.max(-1,Math.min(1,(fx*forward+fz*right)/length)),
+     z:Math.max(-1,Math.min(1,(fz*forward-fx*right)/length)),run:keys.has('ShiftLeft')||keys.has('ShiftRight')||touch.run};
  }
  setInterval(()=>{
    if(!connected()||!room||role!=='player')return;
