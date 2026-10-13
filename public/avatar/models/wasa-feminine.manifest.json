@@ -1,0 +1,393 @@
+{
+  "file": "wasa-feminine.glb",
+  "body": "feminine",
+  "outfits": [
+    "abaya",
+    "atamfa",
+    "buba_zani"
+  ],
+  "sha256": "47770a470aed6b8b1bbccc5f6293e2d07859e6898318a2c632176bd547988834",
+  "bytes": 3164232,
+  "heightMetres": 1.6700200000000003,
+  "jointCount": 42,
+  "clips": [
+    "idle",
+    "walk",
+    "run",
+    "robe_walk",
+    "robe_run"
+  ],
+  "meshStats": [
+    {
+      "name": "sculpted head and hands",
+      "vertices": 7746,
+      "triangles": 14216
+    },
+    {
+      "name": "tailored yoke and sleeves",
+      "vertices": 2353,
+      "triangles": 4338
+    },
+    {
+      "name": "jamfa trousers L",
+      "vertices": 1025,
+      "triangles": 1920
+    },
+    {
+      "name": "jamfa trousers R",
+      "vertices": 1025,
+      "triangles": 1920
+    },
+    {
+      "name": "embroidered cuff L",
+      "vertices": 66,
+      "triangles": 64
+    },
+    {
+      "name": "embroidered cuff R",
+      "vertices": 66,
+      "triangles": 64
+    },
+    {
+      "name": "anatomical eyes",
+      "vertices": 96,
+      "triangles": 172
+    },
+    {
+      "name": "eyebrow -1",
+      "vertices": 32,
+      "triangles": 30
+    },
+    {
+      "name": "eyebrow 1",
+      "vertices": 32,
+      "triangles": 30
+    },
+    {
+      "name": "hair close",
+      "vertices": 348,
+      "triangles": 578
+    },
+    {
+      "name": "hair short",
+      "vertices": 348,
+      "triangles": 578
+    },
+    {
+      "name": "hair curls",
+      "vertices": 348,
+      "triangles": 578
+    },
+    {
+      "name": "hair locs",
+      "vertices": 348,
+      "triangles": 578
+    },
+    {
+      "name": "hair braids",
+      "vertices": 348,
+      "triangles": 578
+    },
+    {
+      "name": "hair curls detail",
+      "vertices": 756,
+      "triangles": 1120
+    },
+    {
+      "name": "hair locs detail",
+      "vertices": 864,
+      "triangles": 1344
+    },
+    {
+      "name": "hair braids detail",
+      "vertices": 864,
+      "triangles": 1344
+    },
+    {
+      "name": "footwear bare feet",
+      "vertices": 2396,
+      "triangles": 4188
+    },
+    {
+      "name": "footwear leather upper L",
+      "vertices": 167,
+      "triangles": 320
+    },
+    {
+      "name": "footwear leather sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers upper L",
+      "vertices": 134,
+      "triangles": 256
+    },
+    {
+      "name": "footwear sneakers lace 0.115 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.135 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.155 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sandals sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sandals strap 0.11 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear sandals strap 0.16 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear slippers sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear slippers strap 0.15 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear leather upper R",
+      "vertices": 167,
+      "triangles": 320
+    },
+    {
+      "name": "footwear leather sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers upper R",
+      "vertices": 134,
+      "triangles": 256
+    },
+    {
+      "name": "footwear sneakers lace 0.115 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.135 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.155 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sandals sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sandals strap 0.11 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear sandals strap 0.16 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear slippers sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear slippers strap 0.15 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "accessory watch",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory ring",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory beads",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory belt",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "outfit abaya garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit abaya hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit atamfa garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit atamfa hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit buba_zani garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit buba_zani hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit buba_zani wrapped skirt",
+      "vertices": 285,
+      "triangles": 448
+    },
+    {
+      "name": "outfit buba_zani wrap seam",
+      "vertices": 90,
+      "triangles": 88
+    },
+    {
+      "name": "headwear hijab hood",
+      "vertices": 392,
+      "triangles": 672
+    },
+    {
+      "name": "headwear hijab drape",
+      "vertices": 1176,
+      "triangles": 2208
+    },
+    {
+      "name": "headwear gyale hood",
+      "vertices": 392,
+      "triangles": 672
+    },
+    {
+      "name": "headwear gyale drape",
+      "vertices": 1176,
+      "triangles": 2208
+    },
+    {
+      "name": "headwear kallabi crown",
+      "vertices": 247,
+      "triangles": 480
+    },
+    {
+      "name": "headwear kallabi wrapped band 1.752",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear kallabi wrapped band 1.77",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear kallabi wrapped band 1.792",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear kallabi wrapped band 1.813",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear kallabi tied tail",
+      "vertices": 6,
+      "triangles": 4
+    },
+    {
+      "name": "accessory handbag body",
+      "vertices": 77,
+      "triangles": 144
+    },
+    {
+      "name": "accessory handbag handle",
+      "vertices": 66,
+      "triangles": 64
+    },
+    {
+      "name": "accessory henna",
+      "vertices": 1021,
+      "triangles": 1087
+    }
+  ],
+  "sourceRepository": "https://github.com/makehumancommunity/makehuman",
+  "sourceRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "sources": [
+    {
+      "path": "makehuman/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+    },
+    {
+      "path": "makehuman/data/rigs/default.mhskel",
+      "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24"
+    },
+    {
+      "path": "makehuman/data/rigs/default_weights.mhw",
+      "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625"
+    },
+    {
+      "path": "makehuman/data/eyes/low-poly/low-poly.obj",
+      "sha256": "783fe1e6331162c876520b4c2bed7a8ca06354ca15497e8ebd68bb1b59f4d3de"
+    },
+    {
+      "path": "makehuman/data/eyes/low-poly/low-poly.mhclo",
+      "sha256": "68582e28e9176cba7cfcf35208f671b6201b8d1bc95c32decff61a3160ec34d8"
+    },
+    {
+      "path": "makehuman/data/eyes/materials/brown_eye.png",
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "path": "makehuman/data/targets/macrodetails/african-female-young.target",
+      "sha256": "92d61eeb3c164b421fd5a7c3537ee45e7e1a51de4d49bf312e19c3df2be1d8fc"
+    }
+  ]
+}

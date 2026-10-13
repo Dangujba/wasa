@@ -6,10 +6,16 @@ WASA is an experimental 3D browser game inspired by Damaturu, Yobe State, Nigeri
 
 ## Project structure
 
-- **public/** — Babylon.js game world, Character Studio, loader, menus and bundled browser assets.
-- **public/world/data/** — derived OpenStreetMap data.
-- **api/** — Node.js/Fastify API, PostgreSQL schema and player-account functions.
-- **source-maps/** — OSM extracts, geographical-data generation scripts and development notes.
+- **public/** â€” Babylon.js game world, Character Studio, loader, menus and bundled browser assets.
+- **public/world/data/** â€” derived OpenStreetMap data.
+- **api/** â€” Node.js/Fastify API, PostgreSQL schema and player-account functions.
+- **source-maps/** â€” OSM extracts, geographical-data generation scripts and development notes.
+- **public/rendering/** â€” shared lighting, surface textures and graphics profiles.
+- **public/avatar/models/** â€” male/female skinned wardrobe GLBs, provenance and manifests.
+- **tools/build-wardrobe.py** â€” reproducible avatar authoring pipeline (NumPy/Pillow).
+- **tests/** â€” Babylon NullEngine geometry, avatar and controller checks (`node --test tests/*.test.cjs`).
+
+See [REALISM_UPGRADE.md](REALISM_UPGRADE.md) for the current realism pass, validation requirements and remaining asset work.
 
 ## Local development
 
@@ -35,7 +41,10 @@ The building models and bridge structure are game-art approximations, not survey
 
 Map extracts and derived geographic data are based on OpenStreetMap contributors and are subject to the Open Database License (ODbL). See https://www.openstreetmap.org/copyright and public/world/DATA-SOURCES.md.
 
-The bundled Babylon.js engine is third-party software. See public/vendor/BABYLON-LICENSE.md. Review additional content licenses before distributing a public build.
+The bundled Babylon.js engine and 8.26.0 loaders are Apache-2.0 software; see
+public/vendor/BABYLON-LICENSE.md. The wardrobe GLBs use CC0 MakeHuman core assets
+plus WASA-authored garments, materials and clips; see public/avatar/models/ART-SOURCES.md
+and MAKEHUMAN-CC0.md for provenance and licensing.
 
 ## Security and deployment
 

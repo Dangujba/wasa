@@ -15,7 +15,8 @@ const minimapContext=minimap.getContext('2d');
 const world = {
   map:null,engine:null,scene:null,camera:null,player:null,
   alpha:1.84,
-  config:{outfit:'kaftan',outfitColor:'ivory',trimColor:'gold',skin:'rich',headwear:'zanna_bukar',body:'masculine'},
+  config:{outfit:'jamfa',outfitColor:'ivory',trimColor:'silver',skin:'rich',headwear:'none',
+    hair:'short',facialHair:'none',footwear:'leather',accessory:'none',body:'masculine'},
   name:'WASA EXPLORER',
   playerPos:new B.Vector3(-95,0,330),
   velocity:new B.Vector3(0,0,0),
@@ -28,7 +29,7 @@ const world = {
   streetsDrawn:0,buildingCount:0,roadCount:0,showMap:true,worldSize:8600,cameraResetQueued:false,landmarks:[],districtCount:0
 };
 const colors={
- sand:'#8A8670',grass:'#4A6050',road:'#2D3D3F',trunk:'#2F4042',minor:'#434F4B',
+ sand:'#8A8670',grass:'#4A6050',road:'#4D4B46',trunk:'#45443E',minor:'#5C574D',
  curb:'#9A9C8E',path:'#8A8370',stripe:'#DFD0AF',concrete:'#C8BEAA',
  stone:'#C5A88C',cream:'#DEC5A5',pink:'#B8836C',mint:'#7A9B89',
  roof:'#7A6552',glass:'#3B6168',steel:'#D5C0A0',gold:'#E5B060',wall:'#B09470'
@@ -59,23 +60,29 @@ function mat(name,color,metal=0,rough=1){
  m.environmentIntensity=.65;
  m.directIntensity=1.1;
  m.ambientColor=m.albedoColor.scale(.12);
+ if(/^road-(residential|primary|trunk)$/.test(name))window.WasaRendering.applySurface(m,'asphalt');
+ else if(/wall|concrete|facade|plaster|parapet/.test(name))window.WasaRendering.applySurface(m,name==='wall-stone'?'block':'plaster');
  world.mats[key]=m;return m;
 }
 function meshBox(name,x,y,z,w,h,d,material,parent=null){
  const o=B.MeshBuilder.CreateBox(name,{width:w,height:h,depth:d},world.scene);
  o.position.set(x,y,z);o.material=material;
+ o.receiveShadows=true;o.metadata={wasaShadow:true};
+ if(material.albedoTexture)window.WasaRendering.boxUV(o);
  if(parent)o.parent=parent;
  return o;
 }
 function meshCylinder(name,x,y,z,top,bottom,height,material,parent=null,tess=12){
  const o=B.MeshBuilder.CreateCylinder(name,{diameterTop:top,diameterBottom:bottom,height,tessellation:tess},world.scene);
  o.position.set(x,y,z);o.material=material;
+ o.receiveShadows=true;o.metadata={wasaShadow:true};
  if(parent)o.parent=parent;
  return o;
 }
 function sphere(name,x,y,z,rx,ry,rz,m,parent=null){
  const o=B.MeshBuilder.CreateSphere(name,{diameter:1,segments:12},world.scene);
  o.position.set(x,y,z);o.scaling.set(rx*2,ry*2,rz*2);o.material=m;
+ o.receiveShadows=true;o.metadata={wasaShadow:true};
  if(parent)o.parent=parent;
  return o;
 }
@@ -87,7 +94,7 @@ function lineMesh(name,segments,width,colorMaterial,height=.052){
   const nx=-(z2-z1)/len*width/2,nz=(x2-x1)/len*width/2;
   const count=positions.length/3;
   positions.push(x1+nx,height,z1+nz,x1-nx,height,z1-nz,x2+nx,height,z2+nz,x2-nx,height,z2-nz);
-  uvs.push(0,0,1,0,0,len/3,1,len/3);
+  uvs.push(0,0,width/3,0,0,len/3,width/3,len/3);
   indices.push(count,count+1,count+2,count+1,count+3,count+2);
  }
  const mesh=new B.Mesh(name,world.scene);
@@ -267,134 +274,91 @@ function triangulate(points){
  return result;
 }
 function buildBuilding(building,idx){
- const p=building.p;
- if(p.length<3)return;
- const centerX=p.reduce((s,q)=>s+q[0],0)/p.length;
- const centerZ=p.reduce((s,q)=>s+q[1],0)/p.length;
- if(Math.hypot(centerX,centerZ)<65)return; // leave The Cross reconstruction clear
+ const original=building.p;
+ if(original.length<3)return;
+ const p=signedArea(original)<0?original.slice().reverse():original;
+ const centerX=p.reduce((s,q)=>s+q[0],0)/p.length,centerZ=p.reduce((s,q)=>s+q[1],0)/p.length;
+ if(Math.hypot(centerX,centerZ)<65)return;
  const minX=Math.min(...p.map(q=>q[0])),maxX=Math.max(...p.map(q=>q[0]));
  const minZ=Math.min(...p.map(q=>q[1])),maxZ=Math.max(...p.map(q=>q[1]));
- if((maxX-minX)<1.6||(maxZ-minZ)<1.6)return;
- if((maxX-minX)*(maxZ-minZ)>9000)return;
+ const width=maxX-minX,depth=maxZ-minZ;
+ if(width<1.6||depth<1.6||width*depth>9000)return;
  const h=building.height?clamp(building.height,2.8,22):2.7+Math.floor(rand(idx*3)*3)*2.55;
- const positions=[],indices=[],normals=[];
+ const positions=[],indices=[],normals=[],uvs=[],edges=[];
+ const offset=rand(idx+71)*8;
+ // Separate vertices on each wall preserve sharp corners and meter-scaled UVs.
  for(let i=0;i<p.length;i++){
-  positions.push(p[i][0],.13,p[i][1],p[i][0],h,p[i][1]);
+   const a=p[i],b=p[(i+1)%p.length],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);
+   if(len<.05)continue;
+   const base=positions.length/3;
+   positions.push(a[0],.13,a[1],a[0],h,a[1],b[0],.13,b[1],b[0],h,b[1]);
+   indices.push(base,base+2,base+1,base+2,base+3,base+1);
+   uvs.push(offset,0,offset,h/3,offset+len/3,0,offset+len/3,h/3);
+   edges.push({a,b,len,x:(a[0]+b[0])/2,z:(a[1]+b[1])/2,nx:dz/len,nz:-dx/len,angle:-Math.atan2(dz,dx)});
  }
- for(let i=0;i<p.length;i++){
-  const j=(i+1)%p.length;const a=2*i,b=2*j;
-  indices.push(a,a+1,b,b,a+1,b+1);
- }
- for(let i=0,t=triangulate(p);i<t.length;i+=3)indices.push(2*t[i]+1,2*t[i+2]+1,2*t[i+1]+1);
  B.VertexData.ComputeNormals(positions,indices,normals);
  const vertex=new B.VertexData();
- vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;
- const mesh=new B.Mesh('OSM building '+building.id,world.scene);
- vertex.applyToMesh(mesh);
- // PBR wall materials with varied roughness for concrete block realism.
- const palette=[
-   mat('wall-cream',colors.cream,0,.82),mat('wall-stone',colors.stone,0,.78),
-   mat('wall-tan',colors.wall,0,.80),mat('wall-pink',colors.pink,0,.75),mat('wall-mint',colors.mint,0,.84)
- ];
+ vertex.positions=positions;vertex.indices=indices;vertex.normals=normals;vertex.uvs=uvs;
+ const mesh=new B.Mesh('OSM building '+building.id,world.scene);vertex.applyToMesh(mesh);
+ const palette=[mat('wall-cream',colors.cream,0,.86),mat('wall-stone',colors.stone,0,.88),
+   mat('wall-tan',colors.wall,0,.87),mat('wall-pink',colors.pink,0,.86),mat('wall-mint',colors.mint,0,.88)];
  mesh.material=palette[Math.floor(rand(idx*3.2)*palette.length)];
- mesh.isPickable=false;mesh.freezeWorldMatrix();
- mesh.receiveShadows=true;
- // Register for shadow casting if shadow generator exists.
- if(world.shadowGen && Math.hypot(centerX,centerZ)<600){
-   try{world.shadowGen.addShadowCaster(mesh);}catch(e){}
- }
- const pad=1.0;
- world.colliders.push({minX:minX-pad,maxX:maxX+pad,minZ:minZ-pad,maxZ:maxZ+pad});
- const depth=maxZ-minZ,width=maxX-minX;
- if(width<35&&depth<35&&width>4&&Math.hypot(centerX,centerZ)<1550){
-  // Raised parapet instead of flat cap — typical Nigerian architecture.
-  const roofMat=mat('roof',colors.roof,0,.72);
-  const roof=meshBox('roof-cap',centerX,h+.08,centerZ,width*.90,.17,depth*.92,roofMat);
-  roof.isPickable=false;
-  roof.receiveShadows=true;
-  // Parapet walls around roof edge.
-  const parapetH=.55,parapetW=.14;
-  for(const [px,pz,pw,pd] of [
-    [centerX,h+parapetH/2+.17,centerZ-depth*.46+parapetW/2,width*.90,parapetH,parapetW],
-    [centerX,h+parapetH/2+.17,centerZ+depth*.46-parapetW/2,width*.90,parapetH,parapetW],
-    [centerX-width*.45+parapetW/2,h+parapetH/2+.17,centerZ,parapetW,parapetH,depth*.92],
-    [centerX+width*.45-parapetW/2,h+parapetH/2+.17,centerZ,parapetW,parapetH,depth*.92]
-  ]){
-    const pwall=meshBox('parapet',px,pz,pd,pw,parapetH,parapetW,mat('parapet-concrete','#C8BDA5',0,.78));
-    pwall.isPickable=false;
-  }
-  // Recessed window geometry with depth and proper glass material.
-  if(h>4.5 && width>5 && Math.hypot(centerX,centerZ)<630){
-   const glassMat=mat('window',colors.glass,.12,.35);
-   const frameMat=mat('window-frame','#4A4A48',.08,.65);
-   const windows=Math.min(3,Math.floor(width/5));
-   const levels=Math.min(3,Math.max(1,Math.floor(h/3)));
-   for(let row=0;row<levels;row++)for(let col=0;col<windows;col++){
-    const x=minX+(col+1)*width/(windows+1);
-    const wy=2+row*2.7;
-    // Frame (recessed into wall).
-    meshBox('window-recess',x,wy,minZ+.04,1.15,.95,.12,frameMat);
-    // Glass pane set back from wall surface.
-    meshBox('window-glass',x,wy,minZ+.08,0.95,.75,.04,glassMat);
-    // Window sill.
-    meshBox('window-sill',x,wy-.48,minZ-.02,1.20,.06,.18,mat('sill','#B8AD95',0,.70));
+ mesh.isPickable=false;mesh.receiveShadows=true;mesh.metadata={wasaShadow:true};mesh.freezeWorldMatrix();
+ const roofData=new B.VertexData(),roofPositions=[],roofUVs=[],roofNormals=[];
+ for(const point of p){roofPositions.push(point[0],h,point[1]);roofUVs.push(point[0]/3,point[1]/3);}
+ const roofIndices=triangulate(p);B.VertexData.ComputeNormals(roofPositions,roofIndices,roofNormals);
+ roofData.positions=roofPositions;roofData.indices=roofIndices;roofData.normals=roofNormals;roofData.uvs=roofUVs;
+ const roof=new B.Mesh('footprint roof '+building.id,world.scene);roofData.applyToMesh(roof);
+ roof.material=mat('roof',colors.roof,0,.87);roof.isPickable=false;roof.receiveShadows=true;
+ roof.metadata={wasaShadow:true};roof.freezeWorldMatrix();
+ world.colliders.push({minX:minX-1,maxX:maxX+1,minZ:minZ-1,maxZ:maxZ+1});
+ if(width<35&&depth<35&&Math.hypot(centerX,centerZ)<800){
+   for(const edge of edges){
+     const parapet=meshBox('footprint parapet',edge.x,h+.24,edge.z,edge.len,.48,.18,mat('parapet-concrete','#C8BDA5',0,.87));
+     parapet.rotation.y=edge.angle;parapet.isPickable=false;
    }
-  }
+   // Choose the facade nearest a mapped road; fixtures follow its actual direction.
+   const front=edges.filter(e=>e.len>5).sort((a,b)=>(roadAt(a.x,a.z)?.distance||999)-(roadAt(b.x,b.z)?.distance||999))[0];
+   if(front){
+     const count=Math.min(4,Math.floor(front.len/3)),levels=Math.max(1,Math.min(3,Math.floor(h/2.8)));
+     const frameMat=mat('window-frame','#49483D',0,.82),glassMat=mat('window','#3D4544',0,.28);
+     const fixture=(name,t,y,w,height,d,out,material)=>{
+       const x=front.a[0]+(front.b[0]-front.a[0])*t+front.nx*out;
+       const z=front.a[1]+(front.b[1]-front.a[1])*t+front.nz*out;
+       const box=meshBox(name,x,y,z,w,height,d,material);box.rotation.y=front.angle;box.isPickable=false;return box;
+     };
+     for(let row=0;row<levels;row++)for(let col=0;col<count;col++){
+       const t=(col+1)/(count+1),wy=1.85+row*2.8;
+       if(wy+.55>h-.2)continue;
+       fixture('window surround',t,wy,1.18,1.03,.14,.06,frameMat);
+       fixture('window pane',t,wy,1.00,.85,.03,.15,glassMat);
+       fixture('window vertical grille',t,wy,.035,.85,.025,.18,frameMat);
+       fixture('window sill',t,wy-.53,1.28,.09,.30,.12,mat('sill','#B8AD95',0,.85));
+     }
+     fixture('compound entry door',.15,1.12,1.05,1.98,.08,.08,mat('entry-door','#555344',0,.85));
+   }
  }
  world.buildingCount++;
 }
 function worldFloor(){
- const ground=B.MeshBuilder.CreateGround('region ground',{width:19000,height:19000,subdivisions:1},world.scene);
+ const ground=B.MeshBuilder.CreateGround('region ground',{width:19000,height:19000,subdivisions:48},world.scene);
  ground.position.y=-.08;
- const soil=mat('warm dusty Damaturu ground','#928A70',0,.92);
- // High-res tileable procedural ground texture with laterite/sand variation.
- const tex=new B.DynamicTexture('ground grit',{width:512,height:512},world.scene,false);
- const c=tex.getContext();
- // Base sandy laterite.
- c.fillStyle='#B0A88A';c.fillRect(0,0,512,512);
- // Multi-layer terrain detail.
- for(let i=0;i<6000;i++){
-   const palette=['#A59882','#BEB5A0','#8E8670','#C5B999','#9A917A','#D2C8AE'];
-   c.fillStyle=palette[Math.floor(rand(i*7.3)*palette.length)];
-   const size=1+rand(i*3.1)*3;
-   c.fillRect((rand(i*2.23)*512)|0,(rand(i*8.61)*512)|0,size,size);
+ const soil=window.WasaRendering.applySurface(mat('warm dusty Damaturu ground','#B0A88A',0,.92),'soil');
+ // Eight-meter repeats provide small grit; vertex colors supply broad variation.
+ const uv=ground.getVerticesData(B.VertexBuffer.UVKind).map(v=>v*19000/8);
+ ground.setVerticesData(B.VertexBuffer.UVKind,uv);
+ const positions=ground.getVerticesData(B.VertexBuffer.PositionKind),vertexColors=[];
+ for(let i=0;i<positions.length;i+=3){
+   const x=positions[i],z=positions[i+2];
+   const shade=.93+.055*Math.sin(x/240)*Math.cos(z/310)+.025*Math.sin((x+z)/73);
+   vertexColors.push(shade,shade,shade*.97,1);
  }
- // Scattered dark pebbles and laterite patches.
- for(let i=0;i<200;i++){
-   c.fillStyle=rand(i*1.9)>.5?'#7A7060':'#6B6352';
-   c.beginPath();
-   c.arc((rand(i*4.1)*512)|0,(rand(i*5.7)*512)|0,1+rand(i*2.8)*2.5,0,Math.PI*2);
-   c.fill();
- }
- // Dry grass tufts.
- c.strokeStyle='#9B9E70';c.lineWidth=.8;
- for(let i=0;i<80;i++){
-   const gx=(rand(i*3.3)*512)|0,gy=(rand(i*6.1)*512)|0;
-   for(let j=0;j<3;j++){
-     c.beginPath();c.moveTo(gx,gy);c.lineTo(gx+rand(i*j*1.4)*8-4,gy-3-rand(i*j*2.1)*6);c.stroke();
-   }
- }
- tex.update();tex.wrapU=B.Texture.WRAP_ADDRESSMODE;tex.wrapV=B.Texture.WRAP_ADDRESSMODE;
- tex.uScale=85;tex.vScale=85;
- soil.albedoTexture=tex;
- // Procedural bump map for ground depth.
- const bumpTex=new B.DynamicTexture('ground bump',{width:256,height:256},world.scene,false);
- const bc=bumpTex.getContext();
- bc.fillStyle='#8080FF';bc.fillRect(0,0,256,256);
- for(let i=0;i<1200;i++){
-   const v=120+rand(i*5.7)*40;
-   bc.fillStyle='rgb('+Math.round(128+rand(i*2.1)*20-10)+','+Math.round(128+rand(i*3.3)*20-10)+','+Math.round(200+rand(i*1.7)*55)+')';
-   bc.fillRect((rand(i*1.2)*256)|0,(rand(i*4.5)*256)|0,2,2);
- }
- bumpTex.update();bumpTex.wrapU=B.Texture.WRAP_ADDRESSMODE;bumpTex.wrapV=B.Texture.WRAP_ADDRESSMODE;
- bumpTex.uScale=85;bumpTex.vScale=85;
- soil.bumpTexture=bumpTex; soil.bumpTexture.level=.3;
- ground.material=soil;ground.isPickable=false;
- ground.receiveShadows=true;
+ ground.setVerticesData(B.VertexBuffer.ColorKind,vertexColors);
+ ground.material=soil;ground.isPickable=false;ground.receiveShadows=true;
  const horizon=B.MeshBuilder.CreateGround('distant terrain',{width:28000,height:28000},world.scene);
- horizon.position.y=-.16;horizon.material=mat('distant earth','#847E6A',0,.95);
- horizon.isPickable=false;horizon.receiveShadows=true;
+ horizon.position.y=-.16;horizon.material=mat('distant earth','#B0A88A',0,.95);horizon.isPickable=false;
 }
+
 function bridgeY(x){
  const ax=Math.abs(x);
  if(ax>=235)return .45;
@@ -425,7 +389,6 @@ function createFlyover(){
    const road=meshBox('flyover raised road deck',x,y,.45,len,.35,15.2,deck);road.rotation.z=tilt;
    const girder=meshBox('continuous deck underside',x,y-.35,.45,len,.44,14.5,concrete);girder.rotation.z=tilt;
    road.receiveShadows=true;
-   if(world.shadowGen&&i%2===0){try{world.shadowGen.addShadowCaster(girder);}catch(_){}}
    for(const side of [-1,1]){
      const z=side*7.62;
      const barrier=meshBox('cantilever safety parapet',x,y+.51,z,len,.79,.32,parapet);
@@ -469,7 +432,6 @@ function createFlyover(){
      const ground=.14,y=bridgeY(x);
      meshBox('bridge pier pad foundation',x,.30,z,2.5,.5,2.9,base);
      const pillar=meshCylinder('flyover reinforced pillar',x,Math.max(1.9,y/2),z,1.30,1.70,Math.max(3.9,y-.6),concrete,null,16);
-     if(world.shadowGen)try{world.shadowGen.addShadowCaster(pillar);}catch(_){}
      meshBox('concrete capital',x,y-.62,z,2.6,.40,2.8,edge);
      world.colliders.push({minX:x-1.2,maxX:x+1.2,minZ:z-1.35,maxZ:z+1.35,hard:true,source:'flyover pier'});
    }
@@ -974,7 +936,7 @@ function optimizeStaticMeshes(){
    if(!(mesh instanceof B.Mesh)||!mesh.material||mesh.parent||!mesh.getTotalVertices())continue;
    const c=mesh.getBoundingInfo().boundingBox.centerWorld;
    const sector=Math.floor(c.x/210)+','+Math.floor(c.z/210);
-   const key=mesh.material.uniqueId+':'+sector;
+   const key=mesh.material.uniqueId+':'+sector+':'+!!mesh.metadata?.wasaShadow+':'+mesh.receiveShadows;
    if(!groups.has(key))groups.set(key,[]);
    groups.get(key).push(mesh);
  }
@@ -985,8 +947,9 @@ function optimizeStaticMeshes(){
      const batch=list.slice(i,i+70);
      if(batch.length<2)continue;
      try {
+       const receives=batch.some(m=>m.receiveShadows),casts=batch.some(m=>m.metadata?.wasaShadow);
        const merged=B.Mesh.MergeMeshes(batch,true,true);
-       if(merged){merged.isPickable=false;merged.freezeWorldMatrix();done+=batch.length-1;}
+       if(merged){merged.isPickable=false;merged.receiveShadows=receives;merged.metadata={wasaShadow:casts};merged.freezeWorldMatrix();done+=batch.length-1;}
      }catch(error){console.warn('[WASA WORLD] Safe mesh batch skipped',error.message);}
    }
  }
@@ -1014,7 +977,7 @@ function updateSceneryCulling(force=false){
  const px=world.playerPos.x,pz=world.playerPos.z;
  const last=world.cullingLast;
  if(!force&&last&&Math.hypot(px-last[0],pz-last[1])<13)return;
- const radius=world.quality==='low'?570:world.quality==='high'?1050:740;
+ const radius=world.graphics?.distance||740;
  for(const item of world.sceneryCulling){
    const inside=Math.abs(item.x-px)<radius+item.size&&Math.abs(item.z-pz)<radius+item.size;
    if(item.mesh.isEnabled()!==inside)item.mesh.setEnabled(inside);
@@ -1248,20 +1211,25 @@ function matchingPlayerOutfit(config){
 function buildAvatar(config){
  if(!window.WasaHuman)throw Error('WASA lightweight human engine is unavailable.');
  // Keep the animated body approximately life-sized in world metres.
- const actor=window.WasaHuman.create(world.scene,matchingPlayerOutfit(config));
- actor.root.scaling.setAll(.49);
+ const actor=window.WasaHuman.create(world.scene,matchingPlayerOutfit(config),{detail:'medium'});
+ const height=actor.getProfile().height;
+ actor.root.scaling.setAll((config.body==='feminine'?1.72:1.82)/height);
  actor.root.position.copyFrom(world.playerPos);
+ actor.root.rotation.y=world.heading;
  world.player=actor.root;
  world.avatarRig=actor;
- if(world.shadowGen){
-  actor.root.getChildMeshes().forEach(m=>{
-    try{world.shadowGen.addShadowCaster(m,true);}catch(_){}
-  });
- }
  return actor.root;
 }
 
 function findSafeSpawn(){
+ const block=world.streetBlock;
+ if(block&&playerCanGo(...block.entry)){
+   world.playerPos.set(block.entry[0],0,block.entry[1]);
+   world.camera.alpha=Math.atan2(-block.dz,-block.dx);
+   world.heading=Math.PI/2-world.camera.alpha;
+   world.camera.target.set(block.entry[0],1.7,block.entry[1]);
+   return;
+ }
  // Start on a real mapped road with unobstructed forward AND backward travel,
  // rather than an arbitrary free point in front of a solid shop wall.
  const ideal=[-95,330],candidates=[];
@@ -1321,114 +1289,18 @@ function findSafeSpawn(){
 function setupScene(){
  world.mats={};
  const sc=new B.Scene(world.engine);world.scene=sc;
- sc.clearColor=new B.Color4(.48,.60,.68,1);
- sc.ambientColor=new B.Color3(.28,.30,.27);
+ sc.clearColor=new B.Color4(.76,.75,.68,1);
+ sc.ambientColor=new B.Color3(.08,.08,.07);
  sc.fogMode=B.Scene.FOGMODE_EXP2;
- sc.fogColor=new B.Color3(.58,.66,.62);
+ sc.fogColor=new B.Color3(.76,.75,.68);
  sc.fogDensity=.00025;
- // PBR environment: procedural HDR-like environment texture for reflections.
- const envSize=256;
- const envTex=new B.RawCubeTexture(sc,[],envSize);
- // Create a simple gradient environment for PBR reflections.
- const faces=['px','nx','py','ny','pz','nz'];
- const faceData=[];
- for(let f=0;f<6;f++){
-   const data=new Uint8Array(envSize*envSize*4);
-   for(let y=0;y<envSize;y++)for(let x=0;x<envSize;x++){
-     const i=(y*envSize+x)*4;
-     const t=y/envSize; // 0=top, 1=bottom
-     // Sky gradient: deep blue at top, warm haze at horizon
-     const r=Math.round((60+t*140)*(.88+.12*Math.sin(x*.04)));
-     const g=Math.round((80+t*120)*(.90+.10*Math.cos(y*.03)));
-     const b=Math.round((110+t*80)*(.87+.13*Math.sin(x*.05+y*.03)));
-     data[i]=clamp(r,0,255); data[i+1]=clamp(g,0,255); data[i+2]=clamp(b,0,255); data[i+3]=255;
-   }
-   faceData.push(data);
- }
- try{
-   envTex.update(faceData);
-   sc.environmentTexture=envTex;
- }catch(e){console.warn('[WASA] Env texture fallback',e.message);}
- // Skybox: procedural gradient dome.
- const skyMat=new B.PBRMaterial('skybox',sc);
- skyMat.albedoColor=new B.Color3(0,0,0);
- skyMat.metallic=0; skyMat.roughness=1;
- skyMat.backFaceCulling=false;
- skyMat.disableLighting=true;
- // Create gradient texture for sky.
- const skyTex=new B.DynamicTexture('sky-gradient',{width:512,height:512},sc,false);
- const skyCtx=skyTex.getContext();
- const skyGrad=skyCtx.createLinearGradient(0,0,0,512);
- skyGrad.addColorStop(0,'#1A3A6B');    // deep blue zenith
- skyGrad.addColorStop(0.25,'#3B6A9B'); // mid blue
- skyGrad.addColorStop(0.5,'#7BA5C0');  // pale blue
- skyGrad.addColorStop(0.7,'#C4BFA5');  // dusty horizon haze
- skyGrad.addColorStop(0.85,'#D8C8A0');// warm Sahel horizon
- skyGrad.addColorStop(1.0,'#C8B890');  // ground
- skyCtx.fillStyle=skyGrad; skyCtx.fillRect(0,0,512,512);
- // Add subtle cloud wisps.
- skyCtx.globalAlpha=.12;
- for(let i=0;i<35;i++){
-   const cx=50+Math.random()*412, cy=80+Math.random()*180;
-   skyCtx.fillStyle='#FFFFFF';
-   skyCtx.beginPath(); skyCtx.ellipse(cx,cy,30+Math.random()*60,8+Math.random()*15,0,0,Math.PI*2); skyCtx.fill();
- }
- skyCtx.globalAlpha=1.0;
- skyTex.update();
- skyMat.emissiveTexture=skyTex;
- skyMat.emissiveColor=new B.Color3(1,1,1);
- const skyDome=B.MeshBuilder.CreateSphere('skyDome',{diameter:24000,segments:24,sideOrientation:B.Mesh.BACKSIDE},sc);
- skyDome.material=skyMat; skyDome.isPickable=false; skyDome.infiniteDistance=true;
- skyDome.renderingGroupId=0;
- // Hemispheric light for ambient fill.
+ window.WasaRendering.environment(sc);
+ window.WasaRendering.sky(sc);
  const hemi=new B.HemisphericLight('sky illumination',new B.Vector3(0,1,0),sc);
- hemi.intensity=.72;hemi.diffuse=new B.Color3(.95,.95,.92);
- hemi.groundColor=new B.Color3(.28,.32,.28);
- // Directional sun with shadows.
- const sun=new B.DirectionalLight('Yobe warm sunlight',new B.Vector3(-.4,-1,.5).normalize(),sc);
- sun.position=new B.Vector3(150,260,-200);
- sun.intensity=1.25;sun.diffuse=new B.Color3(1,.92,.80);
- // Cascaded Shadow Maps for large-area shadow coverage.
- try{
-   const shadowGen=new B.ShadowGenerator(2048,sun);
-   shadowGen.useBlurExponentialShadowMap=true;
-   shadowGen.blurKernel=16;
-   shadowGen.depthScale=35;
-   shadowGen.setDarkness(.35);
-   shadowGen.bias=.0015;
-   shadowGen.normalBias=.012;
-   world.shadowGen=shadowGen;
- }catch(e){console.warn('[WASA] Shadow generator unavailable',e.message);}
- // SSAO2 for contact-shadow ambient occlusion.
- try{
-   const ssao=new B.SSAO2RenderingPipeline('ssao',sc,{
-     ssaoRatio:.5, blurRatio:.5
-   });
-   ssao.radius=3.5;
-   ssao.totalStrength=1.1;
-   ssao.base=.15;
-   ssao.samples=12;
-   ssao.maxZ=300;
-   ssao.minZAspect=.4;
-   world.ssao=ssao;
- }catch(e){console.warn('[WASA] SSAO2 unavailable',e.message);}
- // HDR rendering pipeline with bloom and tone mapping.
- try{
-   const pipeline=new B.DefaultRenderingPipeline('hdr',true,sc);
-   pipeline.bloomEnabled=true;
-   pipeline.bloomThreshold=.7;
-   pipeline.bloomWeight=.18;
-   pipeline.bloomScale=.5;
-   pipeline.imageProcessingEnabled=true;
-   pipeline.imageProcessing.toneMappingEnabled=true;
-   pipeline.imageProcessing.toneMappingType=B.ImageProcessingConfiguration.TONEMAPPING_ACES;
-   pipeline.imageProcessing.exposure=1.1;
-   pipeline.imageProcessing.contrast=1.12;
-   pipeline.imageProcessing.vignetteEnabled=true;
-   pipeline.imageProcessing.vignetteWeight=.35;
-   pipeline.imageProcessing.vignetteBlendMode=B.ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
-   world.hdrPipeline=pipeline;
- }catch(e){console.warn('[WASA] HDR pipeline unavailable',e.message);}
+ hemi.intensity=.28;hemi.diffuse=new B.Color3(.93,.96,1);hemi.groundColor=new B.Color3(.40,.35,.27);
+ const sun=new B.DirectionalLight('Yobe warm sunlight',new B.Vector3(-.55,-1,.4).normalize(),sc);
+ sun.intensity=2.2;sun.diffuse=new B.Color3(1,.94,.83);world.sun=sun;
+
  const camera=new B.ArcRotateCamera('third person',1.84,1.16,8.0,
    new B.Vector3(world.playerPos.x,1.65,world.playerPos.z),sc);
  camera.minZ=.09;camera.maxZ=14000;camera.lowerRadiusLimit=4.2;camera.upperRadiusLimit=12;camera.fov=1.05;
@@ -1446,12 +1318,8 @@ function setupScene(){
  camera.inertialAlphaOffset=0;
  camera.inertialBetaOffset=0;
  world.camera=camera;
- // Attach SSAO2 and HDR pipeline to camera.
- if(world.ssao)sc.postProcessRenderPipelineManager.attachCamerasToRenderPipeline('ssao',camera);
- if(world.hdrPipeline)sc.postProcessRenderPipelineManager.attachCamerasToRenderPipeline('hdr',camera);
- const q=world.quality;
- const ratio=window.devicePixelRatio||1;
- world.engine.setHardwareScalingLevel(q==='low'?Math.max(1.8,ratio):q==='high'?1:clamp(ratio,1,1.65));
+ world.graphics=window.WasaRendering.createQuality(sc,camera,world.sun,world.quality);
+
  if(camera.inputs.attached.pointers) camera.inputs.attached.pointers.buttons=[0];
 }
 async function fetchMap(){
@@ -1586,7 +1454,8 @@ function movePlayer(dt){
     world.travelDirection=null;
     world.roadCourse=null;
  }
- const rightX=-fz,rightZ=fx;
+ // Babylon's left-handed camera uses up × forward for screen-right.
+ const rightX=fz,rightZ=-fx;
  let intendedX=(fx*input.forward+rightX*input.right)*speed;
  let intendedZ=(fz*input.forward+rightZ*input.right)*speed;
  if(guidance){
@@ -1658,6 +1527,19 @@ function updateUI(){
  $('interaction-prompt').hidden=!world.nearby;
  if(world.nearby) $('interaction-text').textContent=world.nearby.name;
  updateSceneryCulling();
+ if(world.graphics){
+   world.graphics.updateShadows(world.playerPos,true);
+   const label=world.quality==='auto'?'AUTO':world.quality.toUpperCase();
+   $('graphics-label').textContent=label;
+   $('graphics-button').title='Graphics: '+world.graphics.status.tier+' (click to change)';
+   if(new URLSearchParams(location.search).has('debug')){
+     let panel=$('render-stats');
+     if(!panel){panel=document.createElement('output');panel.id='render-stats';panel.style.cssText='position:absolute;bottom:10px;left:12px;z-index:20;padding:6px;background:#102629e8;color:#fff;font:11px monospace;pointer-events:none';document.body.append(panel);}
+     const g=world.graphics.status;
+     const avatar=world.avatarRig.getProfile();
+     panel.textContent=g.tier+' | '+g.fps+' FPS | shadows '+g.shadowCasters+' @ '+g.shadowSize+' | AO '+g.ao+' | bloom '+g.bloom+' | avatar '+(avatar.source||'procedural');
+   }
+ }
  updateLandmarkVisibility();
  if(minimapContext&&world.showMap)drawMiniMap();
 }
@@ -1839,11 +1721,9 @@ function setupControls(){
    world.quality=qualityOptions[(qualityOptions.indexOf(world.quality)+1)%3];
    $('graphics-label').textContent=world.quality.toUpperCase();
    try{localStorage.setItem('wasa-quality',world.quality);}catch(_){}
-   if(world.engine){
-     const dpr=window.devicePixelRatio||1;
-     world.engine.setHardwareScalingLevel(world.quality==='low'?Math.max(dpr,1.8):world.quality==='high'?1:clamp(dpr,1,1.65));
-     world.engine.resize();
-   }
+   world.graphics?.setMode(world.quality,world.playerPos);
+   updateSceneryCulling(true);
+   updateUI();
  });
  $('action-button').addEventListener('click',interact);
  const sprint=$('sprint-button');
@@ -1853,7 +1733,7 @@ function setupControls(){
  const joystick=$('joystick'),thumb=$('joystick-thumb');
  const jpos=(e)=>{
    const r=joystick.getBoundingClientRect();
-   const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+57);
+   const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
    const lim=48,scale=Math.min(1,lim/Math.max(1,Math.hypot(dx,dy)));
    world.touch.x=dx*scale/lim;world.touch.y=dy*scale/lim;
    thumb.style.transform='translate('+dx*scale+'px,'+dy*scale+'px)';
@@ -1876,6 +1756,13 @@ async function loadPlayerProfile(){
      if(Object.keys(config).length)world.config={...world.config,...config};
    }
  }catch(error){console.warn('[WASA WORLD] Guest mode',error.message);}
+ // Temporary visual QA selections; account appearance records remain untouched.
+ const preview=new URLSearchParams(location.search),body=preview.get('body');
+ if(preview.has('debug')&&['masculine','feminine'].includes(body)){
+   world.config=matchingPlayerOutfit({...world.config,body,
+     outfit:preview.get('outfit')||(body==='feminine'?'abaya':'jamfa'),
+     headwear:body==='feminine'?'hijab':'none',facialHair:'none',hair:body==='feminine'?'braids':'short'});
+ }
  $('player-name').textContent=shortName(world.name);
  $('player-icon').textContent=world.name.slice(0,1).toUpperCase()||'W';
 }
@@ -1898,7 +1785,11 @@ async function start(){
    for(let i=0;i<map.buildings.length;i++)buildBuilding(map.buildings[i],i);
    await new Promise(resolve=>requestAnimationFrame(resolve));
    progress(82,'BUILDING SHOPFRONTS AND NEIGHBORHOODS');
-   createFlyover();createRaceHub();createStreetDistricts(map);createUniversityDistrict(map);createWayfindingBeacon();
+   createFlyover();createRaceHub();
+   const blockPlan=window.WasaStreetBlock.plan(map,world.colliders);
+   if(blockPlan)world.streetBlock=window.WasaStreetBlock.build(world.scene,blockPlan,{mat,box:meshBox,cylinder:meshCylinder,colliders:world.colliders});
+   else console.warn('[WASA] Street block skipped: updated map has no clear site.');
+   createStreetDistricts(map);createUniversityDistrict(map);createWayfindingBeacon();
    progress(89,'OPTIMIZING CITY GEOMETRY');
    optimizeStaticMeshes();
    prepareSceneryCulling();
@@ -1906,15 +1797,20 @@ async function start(){
    findSafeSpawn();
    updateSceneryCulling(true);
    buildAvatar(world.config);
+   await world.avatarRig.ready;
+   const avatarMeshes=new Set(world.player.getChildMeshes());
+   world.graphics.setCandidates(world.scene.meshes.filter(m=>m.metadata?.wasaShadow||avatarMeshes.has(m)));
+   world.graphics.updateShadows(world.playerPos,true);
    progress(95,'INITIALIZING MOVEMENT');
    setupControls();
    world.scene.render();
    world.engine.runRenderLoop(()=>{
      advanceInputSimulation();
+     world.graphics.sample(Math.min(world.engine.getDeltaTime()/1000,.25),world.playerPos);
      world.scene.render();
    });
    window.addEventListener('resize',()=>world.engine?.resize(),{passive:true});
-   world.ready=true;
+   world.ready=true;world.graphics.status.ready=true;
    world.simulationAt=performance.now();
    $('graphics-label').textContent=world.quality.toUpperCase();
    progress(100,'WORLD READY');
@@ -1926,6 +1822,12 @@ async function start(){
      getPlayer:()=>({x:world.playerPos.x,z:world.playerPos.z,latlon:getPlayerLatLon()}),
      teleportTest:(x,z)=>{if(!playerCanGo(x,z))return false;world.playerPos.set(x,0,z);world.movementActive=false;world.velocity.set(0,0,0);updateSceneryCulling(true);return true;},
      getMeshCount:()=>world.scene.meshes.length,
+     getAvatar:()=>world.avatarRig.getProfile(),
+     getStreetBlock:()=>world.streetBlock?({...world.streetBlock.stats,roadName:world.streetBlock.roadName,
+       entry:world.streetBlock.entry,origin:[world.streetBlock.x,world.streetBlock.z]}):null,
+     getGraphics:()=>({...world.graphics.status,meshes:world.scene.meshes.length,
+       textureCount:world.scene.textures.length,avatarMeshes:world.player.getChildMeshes().length,
+       avatarVertices:world.player.getChildMeshes().reduce((s,m)=>s+m.getTotalVertices(),0)}),
      getLandmarks:()=>world.landmarks.map(x=>({name:x.name,kind:x.kind,p:x.p,verifiedOSM:x.verifiedOSM})),
      getRoute:()=>({meters:map.verifiedRoute?.distanceMeters,points:map.verifiedRoute?.p?.length,ysu:map.campus?.p}),
      getDistrict:()=>({...world.districtStats,universityConceptBlocks:world.universityArtBlocks}),
@@ -1941,7 +1843,7 @@ async function start(){
       radius:world.sceneryCulling?.length||0,active:world.sceneryCulling?.filter(x=>x.mesh.isEnabled()).length||0}),
      getDirection:()=>({forward:[-Math.cos(world.camera.alpha),-Math.sin(world.camera.alpha)],
        travel:world.travelDirection?{...world.travelDirection}:null,roadCourse:world.roadCourse?{...world.roadCourse}:null,
-       right:[Math.sin(world.camera.alpha),-Math.cos(world.camera.alpha)],heading:world.heading,
+       right:[-Math.sin(world.camera.alpha),Math.cos(world.camera.alpha)],heading:world.heading,
        movementAlpha:world.movementActive?world.movementAlpha:null,
        mode:'arrows/WASD move; PageUp/PageDown forward/back; camera free-look does not steer until next movement'}),
      debugMotion:()=>({keys:[...world.keys],focus:world.hasFocus,ready:world.ready,help:$('help-modal').hidden,velocity:world.velocity.asArray(),sprint:world.touch.sprint}),

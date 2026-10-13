@@ -45,3 +45,7 @@ persisted coordinates are implemented in this phase.
 - Add accurate market, stadium, and other named landmarks only after spatial
   coordinates have been validated.
 - Replace provisional models with optimized, licensed production GLB assets.
+
+## Authored neighborhood street block
+
+The current art pass adds a bounded illustrative street block aligned with OSM way `559167448`. Buildings, shop names, courtyard layouts, drainage and trees are game art, and are not assertions about actual businesses or surveyed street features. Reference photographs, generated-asset provenance and the foliage prompt are recorded in `public/assets/street-block/ART-SOURCES.md`.

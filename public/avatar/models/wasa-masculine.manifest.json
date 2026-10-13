@@ -1,0 +1,516 @@
+{
+  "file": "wasa-masculine.glb",
+  "body": "masculine",
+  "outfits": [
+    "jamfa",
+    "kaftan",
+    "shadda",
+    "babbar_riga",
+    "kanuri_robe",
+    "jallabiya"
+  ],
+  "sha256": "7d2cb5d8c719ab299c0a54cb9123c9d06ba0287caeae7e0e291a86d60a76f19a",
+  "bytes": 3448188,
+  "heightMetres": 1.81539,
+  "jointCount": 42,
+  "clips": [
+    "idle",
+    "walk",
+    "run",
+    "robe_walk",
+    "robe_run"
+  ],
+  "meshStats": [
+    {
+      "name": "sculpted head and hands",
+      "vertices": 7843,
+      "triangles": 14368
+    },
+    {
+      "name": "outfit jamfa tunic",
+      "vertices": 441,
+      "triangles": 768
+    },
+    {
+      "name": "standing collar",
+      "vertices": 98,
+      "triangles": 96
+    },
+    {
+      "name": "tailored yoke and sleeves",
+      "vertices": 2385,
+      "triangles": 4386
+    },
+    {
+      "name": "jamfa trousers L",
+      "vertices": 1025,
+      "triangles": 1920
+    },
+    {
+      "name": "jamfa trousers R",
+      "vertices": 1025,
+      "triangles": 1920
+    },
+    {
+      "name": "embroidered cuff L",
+      "vertices": 66,
+      "triangles": 64
+    },
+    {
+      "name": "embroidered cuff R",
+      "vertices": 66,
+      "triangles": 64
+    },
+    {
+      "name": "placket -1",
+      "vertices": 64,
+      "triangles": 62
+    },
+    {
+      "name": "diamond embroidery -1",
+      "vertices": 180,
+      "triangles": 178
+    },
+    {
+      "name": "placket 1",
+      "vertices": 64,
+      "triangles": 62
+    },
+    {
+      "name": "diamond embroidery 1",
+      "vertices": 180,
+      "triangles": 178
+    },
+    {
+      "name": "pocket piping",
+      "vertices": 8,
+      "triangles": 6
+    },
+    {
+      "name": "anatomical eyes",
+      "vertices": 96,
+      "triangles": 172
+    },
+    {
+      "name": "eyebrow -1",
+      "vertices": 32,
+      "triangles": 30
+    },
+    {
+      "name": "eyebrow 1",
+      "vertices": 32,
+      "triangles": 30
+    },
+    {
+      "name": "hair close",
+      "vertices": 526,
+      "triangles": 894
+    },
+    {
+      "name": "hair short",
+      "vertices": 526,
+      "triangles": 894
+    },
+    {
+      "name": "hair curls",
+      "vertices": 526,
+      "triangles": 894
+    },
+    {
+      "name": "hair locs",
+      "vertices": 526,
+      "triangles": 894
+    },
+    {
+      "name": "hair curls detail",
+      "vertices": 756,
+      "triangles": 1120
+    },
+    {
+      "name": "hair locs detail",
+      "vertices": 864,
+      "triangles": 1344
+    },
+    {
+      "name": "facial moustache",
+      "vertices": 68,
+      "triangles": 96
+    },
+    {
+      "name": "facial goatee",
+      "vertices": 102,
+      "triangles": 160
+    },
+    {
+      "name": "facial full_beard",
+      "vertices": 170,
+      "triangles": 288
+    },
+    {
+      "name": "headwear zanna_bukar",
+      "vertices": 207,
+      "triangles": 400
+    },
+    {
+      "name": "headwear trim zanna_bukar 0.004",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim zanna_bukar 0.015",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim zanna_bukar 0.035",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear hula",
+      "vertices": 207,
+      "triangles": 400
+    },
+    {
+      "name": "headwear trim hula 0.004",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim hula 0.015",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim hula 0.035",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear dara",
+      "vertices": 207,
+      "triangles": 400
+    },
+    {
+      "name": "headwear trim dara 0.004",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim dara 0.015",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim dara 0.035",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear bama",
+      "vertices": 207,
+      "triangles": 400
+    },
+    {
+      "name": "headwear trim bama 0.004",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim bama 0.015",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim bama 0.035",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear rawani",
+      "vertices": 207,
+      "triangles": 400
+    },
+    {
+      "name": "headwear trim rawani 0.004",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim rawani 0.015",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "headwear trim rawani 0.035",
+      "vertices": 130,
+      "triangles": 128
+    },
+    {
+      "name": "footwear bare feet",
+      "vertices": 2412,
+      "triangles": 4208
+    },
+    {
+      "name": "footwear leather upper L",
+      "vertices": 167,
+      "triangles": 320
+    },
+    {
+      "name": "footwear leather sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers upper L",
+      "vertices": 134,
+      "triangles": 256
+    },
+    {
+      "name": "footwear sneakers lace 0.115 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.135 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.155 L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sandals sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sandals strap 0.11 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear sandals strap 0.16 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear slippers sole L",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear slippers strap 0.15 L",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear leather upper R",
+      "vertices": 167,
+      "triangles": 320
+    },
+    {
+      "name": "footwear leather sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sneakers upper R",
+      "vertices": 134,
+      "triangles": 256
+    },
+    {
+      "name": "footwear sneakers lace 0.115 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.135 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sneakers lace 0.155 R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "footwear sandals sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear sandals strap 0.11 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear sandals strap 0.16 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "footwear slippers sole R",
+      "vertices": 68,
+      "triangles": 128
+    },
+    {
+      "name": "footwear slippers strap 0.15 R",
+      "vertices": 48,
+      "triangles": 46
+    },
+    {
+      "name": "accessory watch",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory ring",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory beads",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "accessory belt",
+      "vertices": 82,
+      "triangles": 80
+    },
+    {
+      "name": "outfit kaftan garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit kaftan hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit shadda garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit shadda hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit shadda embroidered panel -1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit shadda embroidered panel 1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit babbar_riga garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit babbar_riga hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit babbar_riga embroidered panel -1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit babbar_riga embroidered panel 1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit babbar_riga flowing sleeve L",
+      "vertices": 528,
+      "triangles": 960
+    },
+    {
+      "name": "outfit babbar_riga flowing sleeve R",
+      "vertices": 528,
+      "triangles": 960
+    },
+    {
+      "name": "outfit kanuri_robe garment",
+      "vertices": 1824,
+      "triangles": 3472
+    },
+    {
+      "name": "outfit kanuri_robe hem piping",
+      "vertices": 114,
+      "triangles": 112
+    },
+    {
+      "name": "outfit kanuri_robe embroidered panel -1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit kanuri_robe embroidered panel 1",
+      "vertices": 200,
+      "triangles": 198
+    },
+    {
+      "name": "outfit jallabiya garment",
+      "vertices": 1824,
+      "triangles": 3472
+    }
+  ],
+  "sourceRepository": "https://github.com/makehumancommunity/makehuman",
+  "sourceRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "sources": [
+    {
+      "path": "makehuman/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+    },
+    {
+      "path": "makehuman/data/rigs/default.mhskel",
+      "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24"
+    },
+    {
+      "path": "makehuman/data/rigs/default_weights.mhw",
+      "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625"
+    },
+    {
+      "path": "makehuman/data/eyes/low-poly/low-poly.obj",
+      "sha256": "783fe1e6331162c876520b4c2bed7a8ca06354ca15497e8ebd68bb1b59f4d3de"
+    },
+    {
+      "path": "makehuman/data/eyes/low-poly/low-poly.mhclo",
+      "sha256": "68582e28e9176cba7cfcf35208f671b6201b8d1bc95c32decff61a3160ec34d8"
+    },
+    {
+      "path": "makehuman/data/eyes/materials/brown_eye.png",
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "path": "makehuman/data/targets/macrodetails/african-male-young.target",
+      "sha256": "894abc1fbb3d28543a51fef16f89d5d4bdf9aa2e1534413339811a3d47818b7d"
+    }
+  ]
+}

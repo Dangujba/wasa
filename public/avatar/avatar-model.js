@@ -16,6 +16,7 @@
       if(!this.scene)return;
       const now=performance.now(),dt=Math.min((now-this.time)/1000,.05);this.time=now;
       if(this.actor&&this.enabled)this.actor.animate(dt,this.pose==='idle'?0:1,this.pose==='run');
+      this.graphics?.sample(dt,this.camera.target);
       this.scene.render();
     });
     window.addEventListener('resize',()=>this.engine?.resize(),{passive:true});
@@ -36,10 +37,11 @@
    sc.clearColor=new B.Color4(.42,.55,.57,1);
    sc.ambientColor=new B.Color3(.23,.27,.26);
    sc.fogMode=B.Scene.FOGMODE_EXP2;sc.fogDensity=.007;sc.fogColor=new B.Color3(.39,.50,.51);
+   window.WasaRendering.environment(sc);
    const hemi=new B.HemisphericLight('studio softbox',new B.Vector3(0,1,0),sc);
-   hemi.intensity=.63;hemi.diffuse=new B.Color3(.98,.97,.95);
+   hemi.intensity=.28;hemi.diffuse=new B.Color3(.93,.96,1);
    const key=new B.DirectionalLight('warm directional',new B.Vector3(-.5,-1,.45),sc);
-   key.intensity=.52;key.diffuse=new B.Color3(1,.94,.86);
+   key.intensity=2.2;key.diffuse=new B.Color3(1,.94,.83);
    const rim=new B.PointLight('soft edge',new B.Vector3(-3.0,4.5,3),sc);
    rim.intensity=.42;rim.diffuse=new B.Color3(.75,.88,.86);rim.range=16;
    const camera=new B.ArcRotateCamera('human studio camera',-Math.PI/2,1.36,7.25,new B.Vector3(0,2.35,0),sc);
@@ -49,10 +51,12 @@
    camera.inertia=.65;camera.minZ=.05;camera.attachControl(this.canvas,true);
    if(camera.inputs.attached.pointers)camera.inputs.attached.pointers.buttons=[0];
    this.camera=camera;
+   this.graphics=window.WasaRendering.createQuality(sc,camera,key,'auto',{shadowRadius:8});
    const base=B.MeshBuilder.CreateCylinder('studio exhibition plinth',{diameter:4.55,height:.27,tessellation:64},sc);
    base.position.y=-.015;base.material=this.material('plinth','#386268',.16);
    const floor=B.MeshBuilder.CreateGround('studio floor',{width:70,height:70},sc);
-   floor.position.y=-.16;floor.material=this.material('ground','#748F87');
+   floor.position.y=-.16;floor.material=this.material('ground','#748F87');floor.receiveShadows=true;
+   base.receiveShadows=true;
    for(const rad of [2.06,1.83]){
     const tor=B.MeshBuilder.CreateTorus('lit floor detail',{diameter:rad*2,thickness:rad===2.06?.029:.016,tessellation:72},sc);
     tor.position.y=.142;tor.material=this.material(rad===2.06?'outer ring':'inner ring',rad===2.06?'#D5B37A':'#75AE9F',.20);
@@ -64,7 +68,28 @@
    if(this.actor){this.actor.dispose();this.actor=null;}
    this.current={...cfg};
    this.actor=window.WasaHuman.create(this.scene,cfg);
-   this.actor.root.position.y=.14;
+   this.actor.root.position.y=.12;
+   const actor=this.actor;
+   const loader=document.getElementById('viewport-loader');
+   if(actor.ready&&loader)loader.hidden=false;
+   const refresh=()=>{
+     if(this.actor!==actor)return;
+     this.canvas.dataset.avatarSource=actor.getProfile().source||'procedural';
+     this.graphics.setCandidates(actor.root.getChildMeshes());
+     this.graphics.updateShadows(this.camera.target,true);
+   };
+   refresh();
+   if(actor.ready)actor.ready.then(()=>this.scene.whenReadyAsync()).then(()=>{
+     if(this.actor!==actor)return;
+     refresh();if(loader)loader.hidden=true;
+   }).catch(error=>{
+     if(this.actor!==actor)return;
+     console.warn('[WASA] Character preparation failed',error);
+     if(loader)loader.hidden=true;
+   });
+   else if(loader)loader.hidden=true;
+   this.graphics.status.ready=true;
+   this.graphics.updateShadows(this.camera.target,true);
    this.scene.render();
    return this.actor;
   }

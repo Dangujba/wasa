@@ -1,4 +1,4 @@
-/* WASA Human Lite v2.5 | Physically-Based Procedural Character Engine for Babylon.js
+/* WASA Human Lite v2.6 | Physically-Based Procedural Character Engine for Babylon.js
    Sahelian aesthetic, anatomically grounded, rigged skeletal hierarchy.
    PBR materials, fabric bump weave, sculpted facial anatomy, natural locomotion gait. */
 (() => {
@@ -9,32 +9,12 @@ const trims = { gold: '#E5BF74', ivory: '#F7EFE0', silver: '#C8D2D1', emerald: '
 const colors = { hair: '#14181B', eyes: '#181E22', pupil: '#0B0D0F', white: '#ECE2D6', lip: '#7D473E', shoe: '#422F26' };
 const robes = new Set(['babbar_riga', 'kanuri_robe', 'jallabiya', 'atamfa', 'buba_zani', 'abaya']);
 
-let sharedClothBump = null;
-function getClothBump(scene) {
-  if (sharedClothBump) return sharedClothBump;
-  try {
-    const B = window.BABYLON;
-    const t = new B.DynamicTexture('cloth-weave-lite', { width: 128, height: 128 }, scene, false);
-    const c = t.getContext();
-    c.fillStyle = '#808080'; c.fillRect(0, 0, 128, 128);
-    for (let x = 0; x < 128; x += 4) {
-      for (let y = 0; y < 128; y += 4) {
-        const v = ((x + y) % 8 === 0) ? 146 : 114;
-        c.fillStyle = `rgb(${v},${v},${v})`;
-        c.fillRect(x, y, 3, 3);
-      }
-    }
-    t.update();
-    t.uScale = 14; t.vScale = 14;
-    sharedClothBump = t;
-    return t;
-  } catch (_) { return null; }
-}
-
+const getClothBump = scene => window.WasaRendering.clothNormal(scene);
 function build(scene, cfg = {}, opts = {}) {
   const B = window.BABYLON;
   if (!B || !scene) throw Error('BABYLON scene is required');
   const feminine = cfg.body === 'feminine';
+  const detail = opts.detail === 'medium' ? 14 : opts.detail === 'low' ? 10 : 40;
   const should = feminine ? .46 : .58, hips = feminine ? .51 : .41, waist = feminine ? .33 : .385, chest = feminine ? .43 : .535;
   const legGap = feminine ? .245 : .267;
   const skinCol = skins[cfg.skin] || skins.rich;
@@ -56,16 +36,16 @@ function build(scene, cfg = {}, opts = {}) {
     m.backFaceCulling = false;
 
     if (name.includes('skin') || name.includes('jaw') || name.includes('cheek') || name.includes('ear') || name.includes('nose') || name.includes('hand') || name.includes('finger')) {
-      m.metallic = 0.01;
+      m.metallic = 0;
       m.roughness = 0.58; // soft skin sheen
       m.ambientColor = m.albedoColor.scale(0.22); // warm melanin undertone
     } else if (name.includes('lips')) {
-      m.metallic = 0.02;
+      m.metallic = 0;
       m.roughness = 0.45; // subtle moist lip finish
       m.ambientColor = m.albedoColor.scale(0.25);
     } else if (name.includes('embroidery') || name.includes('gold') || name.includes('silver') || name.includes('trim') || name.includes('watch') || name.includes('ring')) {
-      m.metallic = 0.72;
-      m.roughness = 0.26;
+      m.metallic = ['gold','silver'].includes(cfg.trimColor) ? .65 : 0;
+      m.roughness = m.metallic ? .32 : .65;
     } else if (name.includes('fabric') || name.includes('cloth') || name.includes('scarf') || name.includes('trousers') || name.includes('robe')) {
       m.metallic = 0.0;
       m.roughness = 0.88;
@@ -102,6 +82,7 @@ function build(scene, cfg = {}, opts = {}) {
     n.parent = parent; n.position.set(x, y, z); return n;
   }
   function sphere(name, parent, x, y, z, sx, sy, sz, material, segments = 20) {
+    segments = Math.min(segments, detail);
     const m = B.MeshBuilder.CreateSphere(name, { diameter: 1, segments }, scene);
     m.parent = parent; m.position.set(x, y, z); m.scaling.set(sx * 2, sy * 2, sz * 2); m.material = material;
     m.isPickable = false; return m;
@@ -111,7 +92,7 @@ function build(scene, cfg = {}, opts = {}) {
     m.parent = parent; m.material = material; m.isPickable = false; return m;
   }
   function cylinder(name, parent, x, y, z, height, top, bottom, material, segments = 24) {
-    const m = B.MeshBuilder.CreateCylinder(name, { height, diameterTop: top, diameterBottom: bottom, tessellation: segments }, scene);
+    const m = B.MeshBuilder.CreateCylinder(name, { height, diameterTop: top, diameterBottom: bottom, tessellation: Math.min(segments, detail) }, scene);
     m.parent = parent; m.position.set(x, y, z); m.material = material; m.isPickable = false; return m;
   }
   function box(name, parent, x, y, z, w, h, d, material) {
@@ -119,30 +100,33 @@ function build(scene, cfg = {}, opts = {}) {
     m.parent = parent; m.position.set(x, y, z); m.material = material; m.isPickable = false; return m;
   }
   function ellipsoidProfiles(name, parent, levels, material, segments = 28) {
-    const points = [], indices = [], uvs = [], normals = [];
-    for (let j = 0; j < levels.length; j++) {
-      const [y, rx, rz, zOffset = 0] = levels[j];
-      for (let k = 0; k < segments; k++) {
-        const a = k * Math.PI * 2 / segments;
-        points.push(Math.cos(a) * rx, y, zOffset + Math.sin(a) * rz);
-        uvs.push(k / segments, j / (levels.length - 1));
+    segments=Math.min(segments,detail);
+    const points=[],indices=[],uvs=[],normals=[],stride=segments+1;
+    for(let j=0;j<levels.length;j++){
+      const [y,rx,rz,zOffset=0]=levels[j];
+      for(let k=0;k<=segments;k++){
+        const a=k*Math.PI*2/segments;
+        points.push(Math.cos(a)*rx,y,zOffset+Math.sin(a)*rz);
+        uvs.push(k/segments,(y-levels[0][0])/.7);
       }
     }
-    for (let j = 0; j < levels.length - 1; j++) for (let k = 0; k < segments; k++) {
-      const a = j * segments + k, b = j * segments + (k + 1) % segments, c = a + segments, d = b + segments;
-      indices.push(a, c, b, b, c, d);
+    for(let j=0;j<levels.length-1;j++)for(let k=0;k<segments;k++){
+      const a=j*stride+k,b=a+1,c=a+stride,d=b+stride;
+      indices.push(a,b,c,b,d,c);
     }
-    for (let k = 1; k < segments - 1; k++) {
-      indices.push(0, k, k + 1);
-      const top = (levels.length - 1) * segments;
-      indices.push(top, top + k + 1, top + k);
+    for(let k=1;k<segments-1;k++){
+      indices.push(0,k+1,k);
+      const top=(levels.length-1)*stride;indices.push(top,top+k,top+k+1);
     }
-    B.VertexData.ComputeNormals(points, indices, normals);
-    const data = new B.VertexData();
-    data.positions = points; data.indices = indices; data.normals = normals; data.uvs = uvs;
-    const m = new B.Mesh(name, scene); data.applyToMesh(m);
-    m.parent = parent; m.material = material; m.isPickable = false;
-    return m;
+    B.VertexData.ComputeNormals(points,indices,normals);
+    for(let j=0;j<levels.length;j++){
+      const a=j*stride*3,b=(j*stride+segments)*3;
+      const n=new B.Vector3(normals[a]+normals[b],normals[a+1]+normals[b+1],normals[a+2]+normals[b+2]).normalize();
+      for(const i of [a,b]){normals[i]=n.x;normals[i+1]=n.y;normals[i+2]=n.z;}
+    }
+    const data=new B.VertexData();data.positions=points;data.indices=indices;data.normals=normals;data.uvs=uvs;
+    const mesh=new B.Mesh(name,scene);data.applyToMesh(mesh);
+    mesh.parent=parent;mesh.material=material;mesh.isPickable=false;return mesh;
   }
 
   // Anatomical body proportions under clothing
@@ -265,13 +249,15 @@ function build(scene, cfg = {}, opts = {}) {
   // Head and facial silhouette
   const head = node('head', motion, 0, 3.44, 0);
   bones.head = head;
-  const faceY = .42;
-  sphere('sculpted cranium', head, 0, faceY, .015, feminine ? .302 : .321, .408, .305, skin, 36);
-  sphere('sculpted jawline', head, 0, .238, -.018, feminine ? .213 : .244, .195, .192, skin, 26);
-  sphere('sculpted chin point', head, 0, .148, -.145, feminine ? .095 : .118, .085, .105, skin, 20);
+  // One continuous skin surface avoids overlapping skull/jaw/cheek silhouettes.
+  ellipsoidProfiles('continuous face',head,[
+    [.07,.07,.09,-.10],[.12,.13,.16,-.085],[.20,feminine?.195:.215,.23,-.025],
+    [.30,feminine?.255:.275,.26,.01],[.40,.295,.292,.02],[.50,.307,.316,.025],
+    [.60,.30,.315,.025],[.70,.273,.29,.04],[.78,.205,.23,.04],
+    [.83,.09,.11,.04],[.845,.005,.006,.04]
+  ],skin,40);
 
   for (const side of [-1, 1]) {
-    sphere('cheek ' + side, head, side * .195, .35, -.105, .090, .125, .062, skin, 20);
     sphere('ear helix ' + side, head, side * .316, .434, .024, .041, .086, .049, skin, 16);
     sphere('ear lobe ' + side, head, side * .312, .365, .021, .032, .045, .036, skin, 14);
     // Anatomical eyes with cornea, iris, pupil
@@ -340,12 +326,13 @@ function build(scene, cfg = {}, opts = {}) {
     const scarf = hat === 'hijab' ? cloth : mat('neutral scarf', feminine ? '#BD95AF' : '#C1AD93', .88, 0);
     const layers = [[-.29, .49, .36, .105], [.12, .412, .342, .115],
       [.39, .369, .310, .106], [.66, .343, .288, .110], [.79, .30, .240, .115]];
-    const steps = 30, positions = [], indices = [], normals = [];
+    const steps = Math.min(30,detail), positions = [], indices = [], normals = [], uvs=[];
     const angle0 = -.24, angle1 = Math.PI + .24;
     for (const [y, rx, rz, zoff] of layers) {
       for (let i = 0; i <= steps; i++) {
         const angle = angle0 + (angle1 - angle0) * i / steps;
         positions.push(Math.cos(angle) * rx, y, Math.sin(angle) * rz + zoff);
+        uvs.push(i/steps,(y+.29)/.7);
       }
     }
     for (let row = 0; row < layers.length - 1; row++) for (let col = 0; col < steps; col++) {
@@ -353,7 +340,7 @@ function build(scene, cfg = {}, opts = {}) {
       indices.push(a, b, a + 1, a + 1, b, b + 1);
     }
     B.VertexData.ComputeNormals(positions, indices, normals);
-    const data = new B.VertexData(); data.positions = positions; data.indices = indices; data.normals = normals;
+    const data = new B.VertexData(); data.positions = positions; data.indices = indices; data.normals = normals;data.uvs=uvs;
     const mesh = new B.Mesh('face-framing hijab and scarf', scene);
     data.applyToMesh(mesh); mesh.parent = head; mesh.material = scarf; mesh.isPickable = false;
     sphere('scarf crown', head, 0, .795, .10, .316, .106, .266, scarf, 24);
@@ -365,7 +352,7 @@ function build(scene, cfg = {}, opts = {}) {
   } else if (hat === 'rawani') {
     sphere('turban base', head, 0, .78, .03, .40, .18, .35, cloth);
     for (let n = 0; n < 4; n++) {
-      const tor = B.MeshBuilder.CreateTorus('wrapped rawani', { diameter: .80 + n * .006, thickness: .115, tessellation: 36 }, scene);
+      const tor = B.MeshBuilder.CreateTorus('wrapped rawani', { diameter: .80 + n * .006, thickness: .115, tessellation: Math.min(36,detail) }, scene);
       tor.parent = head; tor.position.y = .70 + n * .093; tor.rotation.z = n * .08; tor.material = n % 2 ? trim : cloth;
     }
     box('rawani tail', head, .36, .39, .22, .15, .69, .13, cloth).rotation.z = .18;
@@ -440,6 +427,19 @@ function build(scene, cfg = {}, opts = {}) {
     head.rotation.z = -motion.rotation.z * .5;
   }
 
+  // Merge only meshes attached to the same joint/material, preserving articulation.
+  const groups=new Map();
+  for(const mesh of root.getChildMeshes()){
+    mesh.computeWorldMatrix(true);mesh.receiveShadows=true;
+    const key=mesh.parent.uniqueId+':'+mesh.material.uniqueId;
+    if(!groups.has(key))groups.set(key,[]);groups.get(key).push(mesh);
+  }
+  for(const batch of groups.values()){
+    if(batch.length<2)continue;
+    const parent=batch[0].parent,inverse=parent.getWorldMatrix().clone().invert();
+    const merged=B.Mesh.MergeMeshes(batch,true,true);
+    if(merged){merged.bakeTransformIntoVertices(inverse);merged.parent=parent;merged.isPickable=false;merged.receiveShadows=true;}
+  }
   animate(0, 0, false);
   return {
     root, rig: bones, animate,
@@ -451,5 +451,5 @@ function build(scene, cfg = {}, opts = {}) {
   };
 }
 
-window.WasaHuman = { create: build, version: '2.5.0-lite' };
+window.WasaHuman = { create: build, version: '2.6.0-lite' };
 })();
