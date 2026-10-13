@@ -113,10 +113,10 @@
      +'<div class="detail-line"><span>HOME CITY</span><strong>'+esc(user.homeCity)+'</strong></div>'
      +'<div class="detail-line"><span>PLAYER LEVEL</span><strong>'+Number(user.level)+'</strong></div>'
      +'<div class="detail-line"><span>EXPERIENCE</span><strong>'+Number(user.xp)+' XP</strong></div>'
-     +'<div class="detail-line"><span>AVATAR</span><strong>NOT YET CREATED</strong></div></div>'
+     +'<div class="detail-line"><span>AVATAR</span><strong>'+ (user.avatarStatus==='created'?'READY':'NOT YET CREATED')+'</strong></div></div>'
      +'<form id="profile-form" class="form-grid">'+field('DISPLAY NAME','text','displayName',user.displayName,'maxlength="40" minlength="2"')+'<button type="submit" class="action-button">SAVE PLAYER NAME</button><p class="form-message" role="status"></p></form>'
      +'<div class="account-actions"><button type="button" class="action-button" data-action="character">OPEN 3D AVATAR CREATOR</button><button type="button" class="secondary-button" data-action="account">ACCOUNT SETTINGS</button><button class="secondary-button" data-action="challenges" type="button">CHALLENGES</button></div>'
-     +'<p class="muted" style="margin-top:26px">Traditional outfits and the full 3D avatar creator are scheduled for Step 3.</p>',
+     +'<p class="muted" style="margin-top:26px">Choose from nine outfits in the Avatar Studio. Your saved character joins each race.</p>',
      'character');
    const input=dialogBody.querySelector('input[name=displayName]');
    if(input) input.value=user.displayName;
@@ -133,24 +133,8 @@
      +'<div class="account-actions"><button class="danger-button" type="button" data-action="delete-prompt">DELETE ACCOUNT</button></div><p id="account-message" class="form-message" role="status"></p>',
      'account');
  }
- function challengeView() {
-   openModal('CHALLENGES','WASA ARENA',
-     '<p class="panel-lead">Challenge real players in Damaturu. Online matchmaking is part of a later build.</p>'
-     +'<div class="locked-list">'
-     +'<div class="locked-item"><span class="locked-icon">▣</span><div><b>CAR RACING</b><small>1 VS 1, RANKED, REMATCH</small></div><span class="locked-tag">SOON</span></div>'
-     +'<div class="locked-item"><span class="locked-icon">◇</span><div><b>MOTORCYCLE RACING</b><small>STREET CIRCUITS AND SPRINTS</small></div><span class="locked-tag">SOON</span></div>'
-     +'<div class="locked-item"><span class="locked-icon">◈</span><div><b>BICYCLE RACING</b><small>STAMINA AND SKILL RACES</small></div><span class="locked-tag">SOON</span></div>'
-     +'<div class="locked-item"><span class="locked-icon">★</span><div><b>CHALLENGE THE CHAMPION</b><small>DUELS AND LIVE SPECTATORS</small></div><span class="locked-tag">SOON</span></div>'
-     +'</div><p class="account-warning" style="margin-top:22px">No live racing server has been deployed yet. This is the confirmed upcoming challenge catalogue.</p>',
-     'challenges');
- }
- function watchView() {
-   openModal('WATCH LIVE','SPECTATOR HUB',
-     '<div class="profile-card"><div class="profile-avatar">◎</div><div><div class="profile-name">NO LIVE MATCHES</div><div class="muted">The spectator network will come online with multiplayer challenges.</div></div></div>'
-     +'<p class="panel-lead">Public races will let viewers follow drivers through multiple 3D spectator cameras. This is a planned WASA feature, not a running broadcast.</p>'
-     +'<button class="secondary-button" type="button" data-action="challenges">VIEW UPCOMING CHALLENGES</button>',
-     'watch');
- }
+ function challengeView() { window.location.href='/multiplayer/'; }
+ function watchView() { window.location.href='/multiplayer/?view=watch'; }
  function settingsView() {
    openModal('SETTINGS','DISPLAY',
      '<p class="panel-lead">Game display preferences are saved on this device.</p>'

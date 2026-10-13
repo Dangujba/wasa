@@ -1,14 +1,17 @@
 import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import pg from 'pg';
+import {pathToFileURL} from 'node:url';
+import {installMultiplayer} from './multiplayer.mjs';
+import {createRaceStore} from './race-store.mjs';
 import { randomBytes, scrypt as scryptCallback, createHash, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
 const scrypt = promisify(scryptCallback);
-const pool = new pg.Pool({ host: '/var/run/postgresql', user: 'wasa', database: 'wasa_dev', max: 8, idleTimeoutMillis: 30000 });
-const app = Fastify({ logger: { level:'warn' }, bodyLimit: 16 * 1024, trustProxy: '127.0.0.1' });
-const origin = 'https://wasa.kasua.ng';
-const cookieName = '__Host-wasa_session';
+export async function createApp({pool, origin = 'https://wasa.kasua.ng', secureCookies = true, logger = {level:'warn'}, resultStore} = {}) {
+if (!pool) throw new Error('A configured PostgreSQL pool is required.');
+const app = Fastify({ logger, bodyLimit: 16 * 1024, trustProxy: '127.0.0.1' });
+const cookieName = secureCookies ? '__Host-wasa_session' : 'wasa_dev_session';
 const SESSION_DAYS = 14;
 const strongPassword = (p) => typeof p === 'string' && p.length >= 10 && p.length <= 128;
 const normalizedEmail = (v) => typeof v === 'string' ? v.trim().toLowerCase() : '';
@@ -29,7 +32,7 @@ app.addHook('onRequest', async (request, reply) => {
 });
 const authRate = { config:{ rateLimit:{ max:5, timeWindow:'15 minutes' } } };
 const sensitiveCookie = (v, maxAge = SESSION_DAYS * 86400) =>
-  cookieName+'='+encodeURIComponent(v)+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age='+maxAge;
+  cookieName+'='+encodeURIComponent(v)+'; Path=/; HttpOnly; '+(secureCookies?'Secure; ':'')+'SameSite=Lax; Max-Age='+maxAge;
 function cookieToken(req) {
   const cookies = String(req.headers.cookie || '').split(';');
   const part = cookies.find(v=>v.trim().startsWith(cookieName+'='));
@@ -81,6 +84,7 @@ async function pruneExpiredSessions() {
 await pruneExpiredSessions();
 const cleanupTimer = setInterval(pruneExpiredSessions,6*60*60*1000);
 cleanupTimer.unref();
+app.addHook('onClose', async () => clearInterval(cleanupTimer));
 
 
 const wardrobe = Object.freeze({
@@ -159,7 +163,11 @@ app.patch('/api/avatar',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},asyn
   return {ok:true,avatar:result.rows[0].avatar_config,created:true};
 });
 
-app.get('/api/health',async()=>({ok:true,service:'wasa-api',stage:'menu-alpha'}));
+const multiplayer = installMultiplayer(app, {origin, store: resultStore || createRaceStore(pool),
+  sessionHash: req => { const token = cookieToken(req); return token ? hexHash(token) : null; },
+  authenticate: async req => { const u = await userFromRequest(req); return u ? {id:u.id, displayName:u.display_name, avatarConfig:normalizedAvatar(u.avatar_config,true)||{...defaultAvatar,version:1}} : null; }
+});
+app.get('/api/health',async()=>({ok:true,service:'wasa-api',stage:'multiplayer-alpha',protocol:1}));
 app.get('/api/me', async(req)=>{
   const user=await userFromRequest(req);
   return {ok:true,authenticated:!!user,user:user?publicUser(user):null};
@@ -202,7 +210,7 @@ app.post('/api/login',authRate,async(req,reply)=>{
 });
 app.post('/api/logout',async(req,reply)=>{
   const token=cookieToken(req);
-  if (token) await pool.query('DELETE FROM sessions WHERE token_hash=$1',[hexHash(token)]);
+  if (token) { await pool.query('DELETE FROM sessions WHERE token_hash=$1',[hexHash(token)]); multiplayer.revokeSession(hexHash(token)); }
   reply.header('Set-Cookie',sensitiveCookie('',0));
   return {ok:true,authenticated:false};
 });
@@ -222,6 +230,7 @@ app.post('/api/delete-account',authRate,async(req,reply)=>{
   if(!strongPassword(password))return safeError(reply,400,'Password required to delete your account.');
   const result=await pool.query('SELECT password_hash FROM users WHERE id=$1',[user.id]);
   if(!result.rows[0] || !(await passwordCheck(password,result.rows[0].password_hash)))return safeError(reply,403,'Incorrect password.');
+  multiplayer.removeUser(user.id);
   await pool.query('DELETE FROM users WHERE id=$1',[user.id]);
   reply.header('Set-Cookie',sensitiveCookie('',0));
   return {ok:true,deleted:true};
@@ -232,7 +241,22 @@ app.setErrorHandler((error,request,reply)=>{
   request.log.error(error);
   return safeError(reply,500,'An unexpected server error occurred.');
 });
-const close=async()=>{await app.close();await pool.end();process.exit(0)};
-process.on('SIGINT',close);
-process.on('SIGTERM',close);
-await app.listen({host:'127.0.0.1',port:3200});
+await app.ready();
+return app;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const origin = process.env.WASA_ORIGIN || 'https://wasa.kasua.ng';
+  const localDevelopment = process.env.WASA_LOCAL_DEVELOPMENT === '1';
+  if (localDevelopment && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(origin)) throw new Error('Development mode requires a loopback origin.');
+  if (!localDevelopment && !origin.startsWith('https://')) throw new Error('Production requires HTTPS.');
+  const pool = new pg.Pool({host: process.env.PGHOST || '/var/run/postgresql', user: process.env.PGUSER || 'wasa',
+    database: process.env.PGDATABASE || 'wasa_dev', max: 8, idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 3000, query_timeout: 5000});
+  const app = await createApp({pool, origin, secureCookies: !localDevelopment});
+  let closing = false;
+  const close = async () => { if (closing) return; closing = true; await app.close(); await pool.end(); };
+  process.once('SIGINT', () => close().catch(() => {process.exitCode=1;}));
+  process.once('SIGTERM', () => close().catch(() => {process.exitCode=1;}));
+  await app.listen({host:'127.0.0.1',port:Number(process.env.WASA_PORT || 3200)});
+}

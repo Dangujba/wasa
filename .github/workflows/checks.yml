@@ -1,0 +1,40 @@
+name: WASA checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: wasa_ci_only
+          POSTGRES_DB: wasa_multiplayer_test_c1c1c1c1
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: postgres
+      PGPASSWORD: wasa_ci_only
+      PGDATABASE: wasa_multiplayer_test_c1c1c1c1
+      WASA_TEST_DATABASE: wasa_multiplayer_test_c1c1c1c1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci --prefix api
+      - run: |
+          psql -v ON_ERROR_STOP=1 -f api/schema.sql
+          psql -v ON_ERROR_STOP=1 -f api/avatar-migration.sql
+          psql -v ON_ERROR_STOP=1 -f api/multiplayer-migration.sql
+          for file in api/*.mjs public/multiplayer/*.js public/shared/*.js; do node --check "$file"; done
+          node --test tests/*.test.cjs

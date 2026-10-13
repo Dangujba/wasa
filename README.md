@@ -1,6 +1,6 @@
 # WASA
 
-WASA is an experimental 3D browser game inspired by Damaturu, Yobe State, Nigeria. The long-term vision includes multiplayer competitions, exploration and vehicles. The current implementation is a single-player walking/exploration prototype with accounts and a character studio.
+WASA is an experimental 3D browser game inspired by Damaturu, Yobe State, Nigeria. The long-term vision includes multiplayer competitions, exploration and vehicles. The current desktop alpha combines geographic exploration, accounts, a character studio and a real-time 1v1 sprint with matchmaking, spectators and saved results.
 
 **Live preview:** https://wasa.kasua.ng/
 
@@ -22,7 +22,7 @@ See [REALISM_UPGRADE.md](REALISM_UPGRADE.md) for the current realism pass, valid
 Requires Node.js, PostgreSQL and a static web server.
 
 1. Run npm ci inside the api directory.
-2. Create a separate local PostgreSQL development database using api/schema.sql.
+2. Create a separate local PostgreSQL development database using api/schema.sql, api/avatar-migration.sql and api/multiplayer-migration.sql.
 3. Configure the development connection safely and start the Fastify API.
 4. Serve the public directory over HTTP(S) and configure reverse-proxy routes as needed.
 
@@ -34,7 +34,7 @@ The current API is configured for a local PostgreSQL socket and the database rol
 - Illustrative commercial storefronts, homes, flyover, filling stations and university-area scenery.
 - Third-person walking, mini-map, camera controls, avatar studio and account API.
 - Walkable flyover ramps and curbs, runtime foot placement, smooth acceleration/turns, and damped head/garment motion.
-- Multiplayer gameplay, production-quality vehicle racing and architectural fidelity are future work.
+- Citywide multiplayer, skill matchmaking, production-quality vehicle racing and architectural fidelity are future work.
 
 The building models and bridge structure are game-art approximations, not surveyed architecture. Businesses without verified location information are not pinned to invented addresses.
 
@@ -52,3 +52,7 @@ and MAKEHUMAN-CC0.md for provenance and licensing.
 Never commit secrets, local .env files, certificates or keys, sessions, private customer data, production databases/backups or installed node_modules. Review the code before public distribution. Deploy via testing and explicit production release steps.
 
 Repository owner: Dangujba.
+
+## Multiplayer alpha
+
+The Challenges menu now opens `/multiplayer/`: authenticated real-time players, FIFO matchmaking, private invitation rooms and a 160 m server-controlled sprint. Public matches support authenticated spectators; results and a simple points leaderboard persist in PostgreSQL. The geographic exploration world remains local. See [MULTIPLAYER.md](MULTIPLAYER.md) for rules, isolated tests and backend release/recovery, and [the revised roadmap](WASA_REMAINING_WORK_ROADMAP.md) for remaining gates. Phone and load testing remain pending.

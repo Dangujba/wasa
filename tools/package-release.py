@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 release = 'motion-'+datetime.now(timezone.utc).strftime('%Y%m%d')+'-'+uuid.uuid4().hex[:8]
 files = [
-    'public/world/index.html', 'public/world/world.js', 'public/world/street-block.js',
+    'public/shared/movement.js', 'public/world/index.html', 'public/world/world.js', 'public/world/street-block.js',
     'public/world/DATA-SOURCES.md', 'public/world/wasa-locomotion.js', 'public/rendering/wasa-rendering.js',
     'public/avatar/index.html', 'public/avatar/avatar-model.js',
     'public/avatar/wasa-human.js', 'public/avatar/wasa-human-lite.js', 'public/avatar/wasa-rigged-human.js', 'public/avatar/wasa-motion.js',

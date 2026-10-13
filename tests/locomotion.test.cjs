@@ -1,6 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const B=require('../public/vendor/babylon.min.js');
 const runtime={window:{BABYLON:B}};
+vm.runInNewContext(fs.readFileSync('public/shared/movement.js','utf8'),runtime);
 vm.runInNewContext(fs.readFileSync('public/world/wasa-locomotion.js','utf8'),runtime);
 const motion=runtime.window.WasaLocomotion;
 
